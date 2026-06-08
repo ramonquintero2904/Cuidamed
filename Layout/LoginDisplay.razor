@@ -1,0 +1,19 @@
+﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        Hola, @context.User.Identity?.Name!
+        <!-- <button class="nav-link btn btn-link" @onclick="BeginLogOut">Salir</button> -->
+    </Authorized>
+    <NotAuthorized>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    public void BeginLogOut()
+    {
+        //Navigation.NavigateToLogout("/");
+        Navigation.NavigateTo("", forceLoad: true);
+    }
+}

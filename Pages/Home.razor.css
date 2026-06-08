@@ -1,0 +1,99 @@
+﻿/* Contenedor Principal con Fondo Blanco */
+.dashboard-container {
+    background-color: #ffffff;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Encabezado */
+.dashboard-header {
+    margin-bottom: 2.5rem;
+}
+
+    .dashboard-header h1 {
+        color: #2b4c7e; /* Azul oscuro suave para contraste */
+        font-weight: 600;
+        font-size: 2.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-header p {
+        color: #6c7a89;
+        font-size: 1.1rem;
+    }
+
+/* Grilla Responsiva (Grid) */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Cajas / Tarjetas del Dashboard */
+.dashboard-card {
+    background-color: #f0f4f8; /* Azul pastel muy claro para el fondo de la caja */
+    border: 1px solid #d9e2ec; /* Borde sutil */
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+    /* Efectos Hover */
+    .dashboard-card:hover {
+        transform: translateY(-4px);
+        background-color: #e1e9f3; /* Azul pastel un poco más acentuado al pasar el mouse */
+        box-shadow: 0 10px 20px rgba(43, 76, 126, 0.05);
+    }
+
+/* Contenedor de Iconos (Estilo Azul Pastel Destacado) */
+.card-icon-wrapper {
+    background-color: #bcccdc; /* Fondo azul pastel medio */
+    color: #102a43; /* Icono en azul oscuro */
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+/* Contenido de la Tarjeta */
+.card-content h3 {
+    color: #102a43;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.card-content p {
+    color: #486581;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+/* Acción en el pie de la tarjeta */
+.card-footer-action {
+    display: flex;
+    align-items: center;
+    color: #334e68;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+    .card-footer-action i {
+        font-size: 1.2rem;
+        margin-left: 0.25rem;
+        transition: transform 0.2s ease;
+    }
+
+.dashboard-card:hover .card-footer-action i {
+    transform: translateX(4px);
+}

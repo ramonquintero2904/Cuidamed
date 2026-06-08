@@ -1,0 +1,164 @@
+﻿@page "/"
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="d-flex align-items-center justify-content-center vh-100 bg-light">
+    <div class="p-4 bg-white rounded shadow-sm" style="max-width: 400px; width: 100%;">
+        <h2 class="text-center mb-4 fs-4 fw-bold text-primary">Iniciar Sesión</h2>
+        
+        <EditForm Model="loginModel" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger small mb-3" />
+
+            <div class="mb-3">
+                <label for="cedula" class="form-label fw-semibold">Cédula de Identidad</label>
+                <InputText id="cedula" 
+                           class="form-control" 
+                           @bind-Value="loginModel.Cedula" 
+                           placeholder="Ej. 12345678" 
+                           readonly="@(isSmsStep)" />  
+            </div>
+
+            @if (isSmsStep)
+            {
+                <div class="mb-3">
+                    <label for="codigoSms" class="form-label fw-semibold">Código SMS</label>
+                    <InputText id="codigoSms" 
+                               class="form-control" 
+                               @bind-Value="loginModel.CodigoSms" 
+                               placeholder="Ingrese el código recibido" />
+                    
+                    <div class="alert alert-warning p-2 mt-2 text-center small" role="alert">
+                        El código expira en: <span class="fw-bold">@FormatTime(timeLeft)</span>
+                    </div>
+                </div>
+            }
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary">
+                    @(isSmsStep ? "Verificar Código" : "Enviar")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private LoginViewModel loginModel = new();
+    private bool isSmsStep = false;
+    
+    // Variables para el temporizador
+    private System.Threading.Timer? countdownTimer;
+    private int timeLeft = 120; // 120 segundos
+
+    // Inyecta el estado de autenticación para comprobarlo al cargar la página
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState != null)
+        {
+            var authState = await AuthState;
+            var user = authState.User;
+
+            // Si el usuario ya está autenticado en el sistema, lo sacamos del Login de inmediato
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/Home");
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!isSmsStep)
+        {
+            // Paso 1: Enviar Cédula (Se mantiene igual)
+            if (!string.IsNullOrWhiteSpace(loginModel.Cedula))
+            {
+                isSmsStep = true;
+                StartCountdown();
+            }
+        }
+        else
+        {
+            // Paso 2: Verificar SMS
+            if (!string.IsNullOrWhiteSpace(loginModel.CodigoSms))
+            {
+                bool isSmsValid = true; // Reemplazar con tu validación real de API
+
+                if (isSmsValid)
+                {
+                    StopTimer();
+
+                    var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+
+                    // AGREGAR 'await' AQUÍ: Ahora guarda de forma persistente en LocalStorage
+                    await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
+
+                    Navigation.NavigateTo("/Home");
+                }
+            }
+        }
+    }
+
+    private void StartCountdown()
+    {
+        timeLeft = 120; // Reiniciamos a 120 segundos
+        countdownTimer = new System.Threading.Timer(async _ =>
+        {
+            if (timeLeft > 0)
+            {
+                timeLeft--;
+                // Forzamos a Blazor a refrescar la UI desde el hilo del Timer
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                // El tiempo terminó, reiniciamos el formulario
+                await ResetForm();
+            }
+        }, null, 0, 1000); // Se ejecuta cada 1000ms (1 segundo)
+    }
+
+    private async Task ResetForm()
+    {
+        StopTimer();
+        isSmsStep = false;
+        loginModel.CodigoSms = string.Empty;
+        loginModel.Cedula = string.Empty; // Vuelve a solicitar la cédula vacía
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void StopTimer()
+    {
+        countdownTimer?.Dispose();
+        countdownTimer = null;
+    }
+
+    // Formatea los segundos restantes en formato MM:SS (Ej: 02:00)
+    private string FormatTime(int seconds)
+    {
+        int minutes = seconds / 60;
+        int remainingSeconds = seconds % 60;
+        return $"{minutes:D2}:{remainingSeconds:D2}";
+    }
+
+    // Buenas prácticas: Liberar el timer si el usuario navega fuera de la página
+    public void Dispose()
+    {
+        StopTimer();
+    }
+
+    public class LoginViewModel
+    {
+        public string Cedula { get; set; } = string.Empty;
+        public string CodigoSms { get; set; } = string.Empty;
+    }
+}

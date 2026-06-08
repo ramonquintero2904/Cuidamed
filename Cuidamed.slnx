@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../EnviamedServer/EnviamedServer.csproj" Id="a8421ed2-42cd-4473-b66c-0bd9161c51b1" />
+  <Project Path="Cuidamed.csproj" />
+</Solution>
