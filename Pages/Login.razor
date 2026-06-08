@@ -69,7 +69,7 @@
             // Si el usuario ya está autenticado en el sistema, lo sacamos del Login de inmediato
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
-                Navigation.NavigateTo("/Home");
+                Navigation.NavigateTo("Home");
             }
         }
     }
@@ -101,7 +101,7 @@
                     // AGREGAR 'await' AQUÍ: Ahora guarda de forma persistente en LocalStorage
                     await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
 
-                    Navigation.NavigateTo("/Home");
+                    Navigation.NavigateTo("Home");
                 }
             }
         }
