@@ -1,0 +1,173 @@
+@page "/ingreso"
+@using Microsoft.AspNetCore.Components.Forms
+<div class="top-bar"></div>
+
+<div class="container d-flex flex-column align-items-center justify-content-center min-vh-100 py-4">
+    <div class="text-center" style="max-width: 450px; width: 100%;">
+        
+        <!-- Logo superior con 'C' -->
+        <div class="mb-2">
+            <span class="logo-c">C</span><span class="registered-symbol">®</span>
+        </div>
+        
+        <p class="placeholder-text text-muted small mb-3"> </p>
+        
+        <!-- Recuadro con triángulo de advertencia -->
+        <div class="d-inline-flex align-items-center mb-2">
+            <div class="alert-box d-flex align-items-center justify-content-center bg-light border">
+                <div class="triangle-icon"></div>
+            </div>
+            <span class="registered-symbol ms-1">®</span>
+        </div>
+
+        <p class="placeholder-text text-muted small mb-3"> </p>
+        
+        <p class="slogan fst-italic mb-4">"Lo que necesitas en un solo lugar"</p>
+        
+        <p class="placeholder-text text-muted small mb-4"> </p>
+        
+        <h1 class="fw-normal text-secondary mb-2" style="font-size: 26px;">Bienvenido</h1>
+        
+        <p class="text-muted small mb-4">Por favor ingresa los datos solicitados</p>
+        
+        <!-- Formulario de ingreso con Blazor EditForm -->
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="d-flex flex-column align-items-center w-100">
+            <DataAnnotationsValidator />
+
+            <div class="input-group-custom mb-3">
+                <InputText @bind-Value="loginModel.Cedula" class="form-control-custom" placeholder="Cédula" />
+                <ValidationMessage For="@(() => loginModel.Cedula)" class="text-danger small mt-1" />
+            </div>
+
+            <div class="input-group-custom mb-4">
+                <InputText @bind-Value="loginModel.Telefono" class="form-control-custom" placeholder="Teléfono Celular" />
+                <ValidationMessage For="@(() => loginModel.Telefono)" class="text-danger small mt-1" />
+            </div>
+
+            <button type="submit" class="btn btn-link btn-submit text-uppercase text-decoration-none fw-bold text-secondary tracking-wide">
+                INGRESAR
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+<style>
+    /* Línea superior naranja */
+    .top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 8px;
+        background-color: #ff6600;
+    }
+
+    /* Simulación de Logos en CSS */
+    .logo-c {
+        font-size: 70px;
+        font-weight: bold;
+        color: #008fa1;
+        position: relative;
+        display: inline-block;
+        line-height: 1;
+    }
+    
+    .logo-c::before {
+        content: "";
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 6px;
+        background-color: #76b88b;
+        border-radius: 50% 50% 0 0;
+    }
+
+    .registered-symbol {
+        font-size: 12px;
+        vertical-align: super;
+        color: #777;
+    }
+
+    /* Recuadro de alerta central */
+    .alert-box {
+        width: 180px;
+        height: 45px;
+    }
+
+    .triangle-icon {
+        width: 0;
+        height: 0;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-bottom: 22px solid #000000;
+        position: relative;
+    }
+
+    .triangle-icon::after {
+        content: "!";
+        color: #ffffff;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 14px;
+        position: absolute;
+        left: -3px;
+        top: 4px;
+    }
+
+    /* Eslogan en azul personalizado */
+    .slogan {
+        color: #00a4ba;
+        font-size: 15px;
+    }
+
+    /* Campos de texto personalizados según el diseño original */
+    .input-group-custom {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .form-control-custom {
+        width: 100%;
+        padding: 10px 12px;
+        border: 4px solid #e06d11; /* Borde naranja grueso */
+        font-size: 14px;
+        color: #333333;
+        outline: none;
+    }
+
+    .form-control-custom:focus {
+        border-color: #ff6600;
+        box-shadow: 0 0 0 0.2rem rgba(244, 129, 33, 0.25);
+    }
+
+    /* Botón Ingresar */
+    .btn-submit {
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
+    
+    .btn-submit:hover {
+        color: #000000 !important;
+    }
+</style>
+
+@code {
+    private LoginModel loginModel = new LoginModel();
+
+    private void HandleLogin()
+    {
+        // Aquí manejas la lógica de autenticación o envío de datos
+        Console.WriteLine($"Cédula: {loginModel.Cedula}, Teléfono: {loginModel.Telefono}");
+    }
+
+    public class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "La cédula es requerida.")]
+        public string Cedula { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "El teléfono es requerido.")]
+        public string Telefono { get; set; } = string.Empty;
+    }
+}

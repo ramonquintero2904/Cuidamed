@@ -5,52 +5,320 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @implements IDisposable
+<PageTitle>Cuidanet</PageTitle>
+<div class="container d-flex flex-column align-items-center justify-content-center min-vh-100 py-4">
+    <div class="text-center" style="max-width: 450px; width: 100%;">
+        <img class="logologin" src="logo.png" />
+        <br />
 
-<div class="d-flex align-items-center justify-content-center vh-100 bg-light">
-    <div class="p-4 bg-white rounded shadow-sm" style="max-width: 400px; width: 100%;">
-        <h2 class="text-center mb-4 fs-4 fw-bold text-primary">Iniciar Sesión</h2>
-        
-        <EditForm Model="loginModel" OnValidSubmit="HandleSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger small mb-3" />
+        @if (isSmsOk)
+        {
+            <br />
+            <div class="d-flex align-items-center justify-content-center mb-3">
 
-            <div class="mb-3">
-                <label for="cedula" class="form-label fw-semibold">Cédula de Identidad</label>
-                <InputText id="cedula" 
-                           class="form-control" 
-                           @bind-Value="loginModel.Cedula" 
-                           placeholder="Ej. 12345678" 
-                           readonly="@(isSmsStep)" />  
+                <div class="checkmark-icon">✓</div>
             </div>
 
+            <p class="text-muted mb-3" style="font-size: 15px;">Verificación realizada con éxito</p>
+
+            <p class="slogan fst-italic mb-5">"Cuidarte nos mueve"</p>
+
+            <div class="text-start w-100 px-3">
+
+                
+                <select id="afiliadoSelect" class="form-select afiliado-box mb-2" @bind="AfiliadoSeleccionado">
+                    <option value="" disabled selected hidden>Selecciona al afiliado...</option>
+                    <option value="1">Juan Perez (Titular)</option>
+                    <option value="2">Luis Luna</option>
+                    <option value="3">Ana Gonzalez</option>
+                </select>
+
+                <p class="text-muted small mb-4" style="line-height: 1.4;">
+
+                </p>
+                <br /><br /><br />
+
+                <div class="w-100 mb-4">
+                    <textarea class="form-control terms-textarea" readonly rows="5">
+CONTRATO DE TÉRMINOS Y CONDICIONES DEL SERVICIO
+
+1. ACEPTACIÓN DE LOS TÉRMINOS
+Al acceder y utilizar este portal, usted acepta cumplir y estar sujeto a los siguientes términos y condiciones de uso. Si no está de acuerdo con alguna parte de estos términos, no deberá acceder al servicio.
+
+2. DESCRIPCIÓN DEL SERVICIO
+El portal provee una plataforma de verificación y gestión para los afiliados y su grupo familiar, permitiendo agilizar los trámites correspondientes a su cobertura de salud y beneficios integrales.
+
+3. OBLIGACIONES DEL USUARIO
+El usuario se compromete a proporcionar información verídica, exacta y actualizada durante el proceso de validación. Queda estrictamente prohibido el uso de identidades falsas o información de terceros sin su debida autorización legal.
+
+4. PRIVACIDAD Y PROTECCIÓN DE DATOS
+Toda la información recolectada a través de este portal será tratada bajo estrictas políticas de confidencialidad y de conformidad con las leyes vigentes de protección de datos personales. Los datos del titular y su grupo familiar se procesan únicamente con fines de autenticación y servicio.
+
+5. MODIFICACIONES AL ACUERDO
+Nos reservamos el derecho de modificar estos términos en cualquier momento. Las modificaciones entrarán en vigencia inmediatamente después de su publicación en el portal. Su uso continuo del servicio constituirá su aceptación de tales cambios.
+
+6. LIMITACIÓN DE RESPONSABILIDAD
+La entidad no se hace responsable por interrupciones temporales del servicio debidas a mantenimiento técnico, fallas de conectividad externas o causas de fuerza mayor. El usuario es responsable de salvaguardar sus datos de acceso.
+                </textarea>
+                </div>
+
+                <div class="form-check d-flex align-items-center text-info-custom">
+                    <input class="form-check-input custom-checkbox me-2" type="checkbox" id="termsCheck" @bind="AceptoTerminos" @onclick='() => NavigateTo("Home")' />
+                    <label class="form-check-label fst-italic user-select-none" for="termsCheck">
+                        Acepto los Términos y Condiciones
+                    </label>
+                </div>
+
+            </div>
+
+
+        }
+        else
+        {
+            <p class="slogan fst-italic mb-4">"Lo que necesitas en un solo lugar"</p>
             @if (isSmsStep)
             {
-                <div class="mb-3">
-                    <label for="codigoSms" class="form-label fw-semibold">Código SMS</label>
-                    <InputText id="codigoSms" 
-                               class="form-control" 
-                               @bind-Value="loginModel.CodigoSms" 
-                               placeholder="Ingrese el código recibido" />
-                    
-                    <div class="alert alert-warning p-2 mt-2 text-center small" role="alert">
-                        El código expira en: <span class="fw-bold">@FormatTime(timeLeft)</span>
-                    </div>
-                </div>
+                <p class="placeholder-text text-muted small mb-4">@(isSmsStep ? "Hemos enviado un SMS con un código para validar la información. Ingresa los números recibidos" : " ") </p>
             }
 
-            <div class="d-grid mt-4">
-                <button type="submit" class="btn btn-primary">
-                    @(isSmsStep ? "Verificar Código" : "Enviar")
-                </button>
-            </div>
-        </EditForm>
+            <br />
+            <h1 class="fw-normal text-secondary mb-2" style="font-size: 26px;">Bienvenido</h1>
+
+            <p class="fuente-gris">Por favor ingresa los datos solicitados</p>
+
+            <EditForm Model="loginModel" OnValidSubmit="HandleSubmit" class="d-flex flex-column align-items-center w-100">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger small mb-3" />
+
+                <div class="mb-3">
+                    <InputText id="cedula"
+                               class="form-control-custom"
+                               @bind-Value="loginModel.Cedula"
+                               placeholder="Cédula"
+                               readonly="@(isSmsStep)" />
+                </div>
+
+                @if (isSmsStep)
+                {
+                    <div class="mb-3">
+
+                        <InputText id="codigoSms"
+                                   class="form-control-custom"
+                                   @bind-Value="loginModel.CodigoSms"
+                                   placeholder="Ingrese el código recibido" />
+
+                        <div class="alert alert-warning p-2 mt-2 text-center small" role="alert">
+                            El código expira en: <span class="fw-bold">@FormatTime(timeLeft)</span>
+                        </div>
+                    </div>
+                }
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-link btn-submit text-uppercase text-decoration-none fw-bold text-secondary tracking-wide">
+                        @(isSmsStep ? "VERIFICAR CODIGO SMS" : "INGRESAR")
+                    </button>
+                </div>
+            </EditForm>
+        }
     </div>
 </div>
+
+<style>
+    /* Línea superior naranja */
+    .top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 8px;
+        background-color: #ff6600;
+    }
+
+    /* Simulación de Logos en CSS */
+    .logo-c {
+        font-size: 70px;
+        font-weight: bold;
+        color: #008fa1;
+        position: relative;
+        display: inline-block;
+        line-height: 1;
+    }
+
+        .logo-c::before {
+            content: "";
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 6px;
+            background-color: #76b88b;
+            border-radius: 50% 50% 0 0;
+        }
+
+    .registered-symbol {
+        font-size: 12px;
+        vertical-align: super;
+        color: #777;
+    }
+
+    /* Recuadro de alerta central */
+    .alert-box {
+        width: 180px;
+        height: 45px;
+    }
+
+    .triangle-icon {
+        width: 0;
+        height: 0;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-bottom: 22px solid #000000;
+        position: relative;
+    }
+
+        .triangle-icon::after {
+            content: "!";
+            color: #ffffff;
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 14px;
+            position: absolute;
+            left: -3px;
+            top: 4px;
+        }
+
+    /* Eslogan en azul personalizado */
+    .slogan {
+        color: #00a4ba;
+        font-size: 15px;
+    }
+
+    /* Campos de texto personalizados según el diseño original */
+    .input-group-custom {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .form-control-custom {
+        width: 100%;
+        padding: 10px 12px;
+        border: 8px solid #e06d11; /* Borde naranja grueso */
+        font-size: 14px;
+        color: #333333;
+        outline: none;
+    }
+
+        .form-control-custom:focus {
+            border-color: #ff6600;
+            box-shadow: 0 0 0 0.2rem rgba(244, 129, 33, 0.25);
+        }
+
+    /* Botón Ingresar */
+    .btn-submit {
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
+
+        .btn-submit:hover {
+            color: #000000 !important;
+        }
+
+    .fuente-gris {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 300; /* Un grosor fino como el de la imagen */
+        color: #808080; /* El tono grisáceo del texto */
+    }
+
+
+    /* Línea gris tenue vertical al lado del check */
+    .divider-line {
+        width: 1px;
+        height: 20px;
+        background-color: #ccc;
+    }
+
+    /* Icono del Checkmark azul */
+    .checkmark-icon {
+        color: #00a4ba;
+        font-size: 30px;
+        font-family: sans-serif;
+        line-height: 0;
+    }
+
+    /* Eslogan azul turquesa */
+    .slogan {
+        color: #00a4ba;
+        font-size: 16px;
+    }
+
+    /* Clase modificada para comportarse como un Dropdown con el estilo visual original */
+    .afiliado-box {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #f6e093; /* Borde amarillo pálido del diseño */
+        background-color: #ffffff;
+        border-radius: 4px;
+        font-size: 15px;
+        color: #333333;
+        outline: none;
+        cursor: pointer;
+        /* Reemplaza la flecha por defecto de Bootstrap si deseas ajustarla */
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e06d11' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    }
+
+        /* Estado de enfoque (Focus) para mantener la armonía del diseño corporativo */
+        .afiliado-box:focus {
+            border-color: #f4b41a;
+            box-shadow: 0 0 0 0.2rem rgba(246, 224, 147, 0.4);
+        }
+
+    /* Color personalizado para el texto inferior y checkbox */
+    .text-info-custom {
+        color: #00a4ba !important;
+        font-size: 15px;
+    }
+
+    /* Estilo del checkbox para que combine con el diseño */
+    .custom-checkbox {
+        border-color: #00a4ba;
+        cursor: pointer;
+    }
+
+        .custom-checkbox:checked {
+            background-color: #00a4ba;
+            border-color: #00a4ba;
+        }
+
+    /* Estilos del área de texto largo del contrato */
+    .terms-textarea {
+        width: 100%;
+        background-color: #f9f9f9;
+        border: 1px solid #dcdcdc;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #555555;
+        line-height: 1.5;
+        padding: 12px;
+        resize: vertical; /* Deshabilita el redimensionamiento manual por el usuario */
+        overflow-y: auto; /* Fuerza el scrolling vertical si el texto sobrepasa el alto */
+    }
+
+        .terms-textarea:focus {
+            background-color: #f9f9f9;
+            border-color: #cccccc;
+            box-shadow: none;
+        }
+
+</style>
 
 @code {
     private LoginViewModel loginModel = new();
     private bool isSmsStep = false;
-    
+    private bool isSmsOk = false;
+    private string AfiliadoSeleccionado { get; set; } = string.Empty;
+    private bool AceptoTerminos { get; set; } = false;
+
     // Variables para el temporizador
     private System.Threading.Timer? countdownTimer;
     private int timeLeft = 120; // 120 segundos
@@ -99,9 +367,10 @@
                     var customAuth = (CustomAuthStateProvider)AuthStateProvider;
 
                     // AGREGAR 'await' AQUÍ: Ahora guarda de forma persistente en LocalStorage
-                    await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
+                    /*await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
 
-                    Navigation.NavigateTo("Home");
+                    Navigation.NavigateTo("Home");*/
+                    isSmsOk = true;
                 }
             }
         }
@@ -132,7 +401,7 @@
         isSmsStep = false;
         loginModel.CodigoSms = string.Empty;
         loginModel.Cedula = string.Empty; // Vuelve a solicitar la cédula vacía
-        
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -160,5 +429,14 @@
     {
         public string Cedula { get; set; } = string.Empty;
         public string CodigoSms { get; set; } = string.Empty;
+    }
+
+    private async void NavigateTo(string page)
+    {
+        var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
+
+        // Reemplaza con tus rutas reales cuando implementes cada vista
+        Navigation.NavigateTo($"/{page}");
     }
 }

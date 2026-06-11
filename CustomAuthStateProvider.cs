@@ -21,16 +21,16 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         try
         {
             // Buscamos si existe la sesión guardada en el navegador
-            var cedula = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", StorageKey);
+         /*   var cedula = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", StorageKey);
 
             if (string.IsNullOrWhiteSpace(cedula))
-            {
+            {*/
                 return new AuthenticationState(_anonymous);
-            }
+          /*  }
 
             // Si existe, creamos la identidad directamente sin pedir credenciales
             var user = CreateClaimsPrincipal(cedula);
-            return new AuthenticationState(user);
+            return new AuthenticationState(user);*/
         }
         catch
         {
@@ -42,7 +42,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     public async Task MarkUserAsAuthenticated(string cedula)
     {
         // Guardamos la cédula en el LocalStorage del navegador
-        await _jsRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, cedula);
+        //await _jsRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, cedula);
 
         var user = CreateClaimsPrincipal(cedula);
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));

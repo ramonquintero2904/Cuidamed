@@ -1,70 +1,59 @@
 ﻿@page "/Home"
 @inject NavigationManager Navigation
-<PageTitle>Enviamed</PageTitle>
+<PageTitle>Cuidanet</PageTitle>
 
 <AuthorizeView>
     <Authorized>
-       
-        <div class="dashboard-container">
-            <header class="dashboard-header">
-                <h1>Panel de Control Médico</h1>
-                <p>Gestiona tus servicios de salud de forma rápida y sencilla</p>
-            </header>
+        <div class="container d-flex flex-column align-items-center justify-content-center ">
+    <div class="text-center" style="max-width: 450px; width: 100%;">
+        <img class="logohome" src="logo.png" />
+      </div>
+      </div>
+        <br />
+        <div align="center">
+           
+        <br />
+            <p class="slogan fst-italic mb-4">"Cuidamos tu bienestar"</p>
+        </div>
 
+        <div class="dashboard-container">
             <div class="dashboard-grid">
                 <div class="dashboard-card" @onclick='() => NavigateTo("beneficios")'>
-                    <div class="card-icon-wrapper">
-                        <i class="bi bi-shield-check"></i>
-                    </div>
                     <div class="card-content">
-                        <h3>Resumen de Beneficios</h3>
-                        <p>Consulta detallada de tus coberturas vigentes y planes de salud activos.</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>Ver coberturas</span> <i class="bi bi-arrow-right-short"></i>
+                        <img class="logodashboard" src="coberturas.png" />
+                        <div align="center">
+                            <p class="text-muted mb-3" style="font-size: 15px;">Coberturas y consumos</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="dashboard-card" @onclick='() => NavigateTo("proveedores")'>
-                    <div class="card-icon-wrapper">
-                        <i class="bi bi-geo-alt"></i>
-                    </div>
                     <div class="card-content">
-                        <h3>Red de Proveedores</h3>
-                        <p>Motor de búsqueda y mapa interactivo de prestadores de servicios médicos.</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>Buscar prestador</span> <i class="bi bi-arrow-right-short"></i>
+                        <img class="logodashboard" src="proveedores.png" />
+                        <div align="center">
+                            <p class="text-muted mb-3" style="font-size: 15px;">Red de Proveedores</p>
+                         </div>
                     </div>
                 </div>
 
                 <div class="dashboard-card" @onclick='() => NavigateTo("citas-aps")'>
-                    <div class="card-icon-wrapper">
-                        <i class="bi bi-calendar-plus"></i>
-                    </div>
                     <div class="card-content">
-                        <h3>Solicitud de Citas APS</h3>
-                        <p>Flujo guiado para agendar tus citas de Atención Primaria en Salud.</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>Agendar cita</span> <i class="bi bi-arrow-right-short"></i>
+                        <img class="logodashboard" src="proveedores.png" />
+                        <div align="center"><p class="text-muted mb-3" style="font-size: 15px;">Agendar cita APS</p></div>
                     </div>
                 </div>
 
                 <div class="dashboard-card" @onclick='() => NavigateTo("laboratorios")'>
-                    <div class="card-icon-wrapper">
-                        <i class="bi bi-clipboard2-pulse"></i>
-                    </div>
                     <div class="card-content">
-                        <h3>Consultas y Laboratorios</h3>
-                        <p>Vistas específicas para gestionar, revisar e imprimir tus estudios y laboratorios.</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>Gestionar estudios</span> <i class="bi bi-arrow-right-short"></i>
+                        <img class="logodashboard" src="sintomas.png" />
+                        <div align="center">
+                            <p class="text-muted mb-3" style="font-size: 15px;">Consultas y Laboratorios</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+           
 
     </Authorized>
 
