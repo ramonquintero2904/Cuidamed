@@ -436,7 +436,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         var customAuth = (CustomAuthStateProvider)AuthStateProvider;
         await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
 
-        // Reemplaza con tus rutas reales cuando implementes cada vista
-        Navigation.NavigateTo($"/{page}");
+        // Reemplaza con tus rutas reales cuando implementes cada vista.
+        Navigation.NavigateTo($"{page}");
     }
 }
