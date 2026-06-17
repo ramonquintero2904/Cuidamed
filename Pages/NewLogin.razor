@@ -1,0 +1,443 @@
+﻿@page "/"
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@implements IDisposable
+<PageTitle>Cuidanet</PageTitle>
+
+<div class="login-page d-flex align-items-center justify-content-center min-vh-100 p-3 p-md-5">
+    
+    <div class="brand-wrapper shadow container-fluid p-0">
+        <div class="row g-0 m-0 w-100 min-vh-responsive">
+            
+            <div class="col-12 col-md-6 d-flex flex-column align-items-center justify-content-center logo-section p-4 py-5 py-md-0">
+                <div class="text-center">
+                    <h1 class="logo-text m-0">cuida<span class="logo-net">net</span></h1>
+                    <span class="cn-login-card__badge">Acceso seguro</span>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 d-flex align-items-center justify-content-center login-section p-3 p-sm-4 p-lg-5">
+                <div class="login-card p-4 shadow-sm w-100">
+                    <EditForm Model="@loginModel" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+                        <h1 class="fw-normal text-secondary mb-2" style="font-size: 26px;">Bienvenido</h1>
+                        <div class="mb-3">
+
+
+@if (isSmsOk)
+                            {
+
+                                <div class="d-flex align-items-center justify-content-center mb-3">
+
+                                    <div class="checkmark-icon">✓</div>
+                                </div>
+
+                                <p class="text-muted mb-3" style="font-size: 15px;">Verificación realizada con éxito</p>
+
+                                <p class="slogan fst-italic mb-5">"Cuidarte nos mueve"</p>
+
+                                <div class="text-start w-100 px-3">
+
+
+                                    <select id="afiliadoSelect" class="form-select afiliado-box mb-2" @bind="AfiliadoSeleccionado">
+                                        <option value="" disabled selected hidden>Selecciona al afiliado...</option>
+                                        <option value="1">Juan Perez (Titular)</option>
+                                        <option value="2">Luis Luna</option>
+                                        <option value="3">Ana Gonzalez</option>
+                                    </select>
+
+                                    <p class="text-muted small mb-4" style="line-height: 1.4;">
+
+                                    </p>
+
+
+                                    <div class="w-100 mb-4">
+                                        <textarea class="form-control terms-textarea" readonly rows="5">
+    CONTRATO DE TÉRMINOS Y CONDICIONES DEL SERVICIO
+
+    1. ACEPTACIÓN DE LOS TÉRMINOS
+    Al acceder y utilizar este portal, usted acepta cumplir y estar sujeto a los siguientes términos y condiciones de uso. Si no está de acuerdo con alguna parte de estos términos, no deberá acceder al servicio.
+
+    2. DESCRIPCIÓN DEL SERVICIO
+    El portal provee una plataforma de verificación y gestión para los afiliados y su grupo familiar, permitiendo agilizar los trámites correspondientes a su cobertura de salud y beneficios integrales.
+
+    3. OBLIGACIONES DEL USUARIO
+    El usuario se compromete a proporcionar información verídica, exacta y actualizada durante el proceso de validación. Queda estrictamente prohibido el uso de identidades falsas o información de terceros sin su debida autorización legal.
+
+    4. PRIVACIDAD Y PROTECCIÓN DE DATOS
+    Toda la información recolectada a través de este portal será tratada bajo estrictas políticas de confidencialidad y de conformidad con las leyes vigentes de protección de datos personales. Los datos del titular y su grupo familiar se procesan únicamente con fines de autenticación y servicio.
+
+    5. MODIFICACIONES AL ACUERDO
+    Nos reservamos el derecho de modificar estos términos en cualquier momento. Las modificaciones entrarán en vigencia inmediatamente después de su publicación en el portal. Su uso continuo del servicio constituirá su aceptación de tales cambios.
+
+    6. LIMITACIÓN DE RESPONSABILIDAD
+    La entidad no se hace responsable por interrupciones temporales del servicio debidas a mantenimiento técnico, fallas de conectividad externas o causas de fuerza mayor. El usuario es responsable de salvaguardar sus datos de acceso.
+                                        </textarea>
+                                    </div>
+                                    <input class="form-check-input custom-checkbox me-2" type="checkbox" id="termsCheck" @bind="AceptoTerminos" @onclick='() => NavigateTo("Home")' />
+                                    <label class="form-check-label fst-italic user-select-none" for="termsCheck">
+                                        Acepto los Términos y Condiciones
+                                    </label>
+                                </div>
+
+
+                            }
+                            else
+                            {
+
+
+
+
+
+                                @if (isSmsStep)
+                                {
+                                    <p class="placeholder-text text-muted small mb-4">@(isSmsStep ? "Hemos enviado un SMS con un código para validar la información. Ingresa los números recibidos" : " ") </p>
+                                    <InputNumber id="codigoSms"
+                                    class="form-control custom-input"
+                                    @bind-Value="loginModel.CodigoSms"
+                                    placeholder="Código SMS" />
+
+                                    <div class="text-center small" role="alert">
+                                        Expira en: <span class="fw-bold">@FormatTime(timeLeft)</span>
+                                    </div>
+                                    <button type="submit" class="btn btn-login w-100 mb-3 py-2">Verificar SMS</button>
+                                }
+                                else
+                                {
+                                    <p class="fuente-gris">Por favor ingresa los datos solicitados</p>
+                                    <InputNumber @bind-Value="loginModel.Cedula" class="form-control custom-input" placeholder="Cédula" />
+                                    <button type="submit" class="btn btn-login w-100 mb-3 py-2">Iniciar sesión</button>
+                                }
+                            }
+                        </div>
+
+
+
+                        
+                    </EditForm>
+
+                    <hr class="divider-line my-3" />
+                    @if (!isSmsOk){
+                    <div class="d-flex flex-column gap-3 support-links mt-2 ps-1">
+                        <a href="/register" class="text-decoration-none d-flex align-items-center gap-3">
+                            <i class="bi bi-person-plus fs-3"></i> Nuevo usuario
+                        </a>
+                        <a href="/support" class="text-decoration-none d-flex align-items-center gap-3">
+                            <i class="bi bi-headset fs-3"></i> Asistencia al usuario
+                        </a>
+                    </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<div class="w-100 text-center text-white pb-4 mx-auto" style="max-width: 900px;">
+    <div class="d-flex align-items-center justify-content-center my-3 px-2">
+        <div class="flex-grow-1 bg-white opacity-25" style="height: 1px;"></div>
+        <span class="mx-3 small text-white-50 text-nowrap">Más información</span>
+        <div class="flex-grow-1 bg-white opacity-25" style="height: 1px;"></div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <a href="#" class="footer-icon"><i class="bi bi-info-circle"></i></a>
+        <a href="#" class="footer-icon"><i class="bi bi-book"></i></a>
+        <a href="#" class="footer-icon"><i class="bi bi-envelope"></i></a>
+        <a href="#" class="footer-icon"><i class="bi bi-telegram"></i></a>
+        <a href="#" class="footer-icon"><i class="bi bi-send-fill" style="transform: rotate(-30deg);"></i></a>
+    </div>
+
+    <p class="copyright-text px-3 m-0">
+        &copy; MEDICITAS C.A. RIF J-40337903-3 - Todos los derechos reservados.
+    </p>
+</div>
+
+<style>
+
+    /* Fondo general que se expande por completo */
+    .login-page {
+        background: linear-gradient(rgba(3, 90, 113, 0.45), rgba(3, 90, 113, 0.45)), 
+                    url('watermarked_img_2602115700390615759.png') no-repeat center center;
+        background-size: cover;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* Contenedor responsivo que pasa de tarjeta vertical a horizontal */
+    .brand-wrapper {
+        background-color: #035A71;
+        border-radius: 28px;
+        overflow: hidden; /* Mantiene los bordes redondeados con las columnas internas */
+        width: 100%;
+        max-width: 500px; /* Ancho por defecto en móviles */
+        transition: max-width 0.3s ease;
+    }
+
+    /* Altura adaptativa para evitar cortes */
+    .min-vh-responsive {
+        min-height: auto;
+    }
+
+    /* Sección donde se ubica el logo */
+    .logo-section {
+        background-color: #035A71;
+    }
+
+    /* Estilo del Logo Cuidanet */
+    .logo-text {
+        font-family: 'Montserrat', sans-serif;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 3.4rem;
+        letter-spacing: -2px;
+        line-height: 1;
+    }
+
+    .logo-net {
+        font-weight: 300;
+        color: #9CE9D5;
+    }
+
+    /* Sección interna de inicio de sesión */
+    .login-section {
+        background-color: #035A71;
+    }
+
+    /* Tarjeta blanca */
+    .login-card {
+        background-color: #ffffff;
+        border-radius: 24px;
+        max-width: 100%;
+    }
+
+    /* Inputs y componentes */
+    .label-muted {
+        color: #495057;
+        font-size: 0.95rem;
+    }
+
+    .custom-input {
+        border: 1.5px solid #015F61;
+        border-radius: 12px;
+        padding: 0.65rem 1rem;
+        font-size: 1rem;
+        color: #212529;
+    }
+    .custom-input:focus {
+        border-color: #004041;
+        box-shadow: 0 0 0 0.25rem rgba(1, 95, 97, 0.2);
+    }
+
+    .btn-login {
+        background-color: #024E58;
+        color: white;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 1.15rem;
+        border: none;
+        transition: background-color 0.2s ease;
+    }
+    .btn-login:hover {
+        background-color: #013b43;
+        color: white;
+    }
+
+    .divider-line {
+        border-top: 1px solid #dee2e6;
+        opacity: 1;
+    }
+
+    .support-links a {
+        color: #121212 !important;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    /* Footer interactivo */
+    .footer-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border: 1.5px solid rgba(255, 255, 255, 0.8);
+        border-radius: 12px;
+        color: white;
+        text-decoration: none;
+        font-size: 1.3rem;
+        transition: all 0.2s ease;
+    }
+    .footer-icon:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .copyright-text {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    /* ==========================================================================
+       MEDIA QUERIES: Se duplica el @@ para evitar conflictos con el compilador Razor
+       ========================================================================== */
+    @@media (min-width: 768px) {
+        .brand-wrapper {
+            max-width: 950px; /* Se expande a lo ancho en pantallas de PC */
+        }
+        .min-vh-responsive {
+            min-height: 550px; /* Altura armoniosa fija en escritorio */
+        }
+        .login-section {
+            background-color: #025166; 
+            border-top-right-radius: 28px;
+            border-bottom-right-radius: 28px;
+        }
+        .logo-section {
+            border-top-left-radius: 28px;
+            border-bottom-left-radius: 28px;
+        }
+    }
+
+    @@media (min-width: 1200px) {
+        .brand-wrapper {
+            max-width: 1100px; /* Ancho máximo para pantallas muy grandes */
+        }
+    }
+</style>
+
+@code {
+    private LoginModel loginModel = new LoginModel();
+    private bool isSmsStep = false;
+    private bool isSmsOk = false;
+    private string AfiliadoSeleccionado { get; set; } = string.Empty;
+    private bool AceptoTerminos { get; set; } = false;
+
+
+    
+    // Variables para el temporizador
+    private System.Threading.Timer? countdownTimer;
+    private int timeLeft = 120; // 120 segundos
+
+    // Inyecta el estado de autenticación para comprobarlo al cargar la página
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState != null)
+        {
+            var authState = await AuthState;
+            var user = authState.User;
+
+            // Si el usuario ya está autenticado en el sistema, lo sacamos del Login de inmediato
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Navigation.NavigateTo("Home");
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!isSmsStep)
+        {
+            // Paso 1: Enviar Cédula (Se mantiene igual)
+            if (!string.IsNullOrWhiteSpace(loginModel.Cedula.ToString()))
+            {
+                isSmsStep = true;
+                StartCountdown();
+            }
+        }
+        else
+        {
+            // Paso 2: Verificar SMS
+            if (!string.IsNullOrWhiteSpace(loginModel.CodigoSms.ToString()))
+            {
+                bool isSmsValid = true; // Reemplazar con tu validación real de API
+
+                if (isSmsValid)
+                {
+                    StopTimer();
+
+                    var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+
+                    // AGREGAR 'await' AQUÍ: Ahora guarda de forma persistente en LocalStorage
+                    /*await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
+                    
+                    NavigateTo("Home");*/
+                    isSmsOk = true;
+                }
+            }
+        }
+    }
+
+    private void StartCountdown()
+    {
+        timeLeft = 120; // Reiniciamos a 120 segundos
+        countdownTimer = new System.Threading.Timer(async _ =>
+        {
+            if (timeLeft > 0)
+            {
+                timeLeft--;
+                // Forzamos a Blazor a refrescar la UI desde el hilo del Timer
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                // El tiempo terminó, reiniciamos el formulario
+                await ResetForm();
+            }
+        }, null, 0, 1000); // Se ejecuta cada 1000ms (1 segundo)
+    }
+
+    private async Task ResetForm()
+    {
+        StopTimer();
+        isSmsStep = false;
+        loginModel.CodigoSms = null;
+        loginModel.Cedula = null; // Vuelve a solicitar la cédula vacía
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void StopTimer()
+    {
+        countdownTimer?.Dispose();
+        countdownTimer = null;
+    }
+
+    // Formatea los segundos restantes en formato MM:SS (Ej: 02:00)
+    private string FormatTime(int seconds)
+    {
+        int minutes = seconds / 60;
+        int remainingSeconds = seconds % 60;
+        return $"{minutes:D2}:{remainingSeconds:D2}";
+    }
+
+    // Buenas prácticas: Liberar el timer si el usuario navega fuera de la página
+    public void Dispose()
+    {
+        StopTimer();
+    }
+
+    public class LoginModel
+    {
+        public long? Cedula { get; set; }
+        public long? CodigoSms { get; set; }
+    }
+
+    private async void NavigateTo(string page)
+    {
+        var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula.ToString());
+
+        // Reemplaza con tus rutas reales cuando implementes cada vista.
+        Navigation.NavigateTo($"{page}");
+    }
+}

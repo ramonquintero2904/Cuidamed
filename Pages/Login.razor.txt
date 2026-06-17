@@ -1,4 +1,4 @@
-﻿@page "/login"
+﻿@page "/"
 
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Authorization
@@ -6,19 +6,23 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 <PageTitle>Cuidanet</PageTitle>
+<!-- <div class="container d-flex flex-column align-items-center justify-content-center min-vh-100 py-4"> -->
+<!-- <div class="text-center" style="max-width: 450px; width: 100%;"> -->
+
+        <header>
+    <!-- <header class="cn-login-card__head"> -->
+            aaa
+            <!--<img src="logo.png" alt="CuidaNet">-->
+        </header>
 
 
- <div class="text-center"> 
-        <!-- <div class="text-center" style="max-width: 450px; width: 100%;"> -->
 
-<header class="cn-login-card__head">
-            <span class="cn-login-card__badge">Acceso seguro</span>
-            <img src="LogoCuidaNet.png" alt="CuidaNet" class="cn-login-card__logo">
-</header>
+        
+        <br />
 
         @if (isSmsOk)
         {
-           
+            <br />
             <div class="d-flex align-items-center justify-content-center mb-3">
 
                 <div class="checkmark-icon">✓</div>
@@ -41,7 +45,7 @@
                 <p class="text-muted small mb-4" style="line-height: 1.4;">
 
                 </p>
-               
+                <br /><br /><br />
 
                 <div class="w-100 mb-4">
                     <textarea class="form-control terms-textarea" readonly rows="5">
@@ -95,45 +99,40 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
                 <DataAnnotationsValidator />
                 <ValidationSummary class="text-danger small mb-3" />
 
-            
                 <div class="mb-3">
-                    <InputNumber id="cedula"
+                    <InputText id="cedula"
                                class="form-control-custom"
-                               @bind-Value="loginModel.Cedula" 
+                               @bind-Value="loginModel.Cedula"
                                placeholder="Cédula"
                                readonly="@(isSmsStep)" />
                 </div>
 
                 @if (isSmsStep)
                 {
-                
                     <div class="mb-3">
-                        <InputNumber id="codigoSms"
-                                   class="form-control-custom"
-                                   @bind-Value="loginModel.CodigoSms" 
-                                   placeholder="Código SMS" />
 
-                        <div class="text-center small" role="alert">
-                            Expira en: <span class="fw-bold">@FormatTime(timeLeft)</span>
+                        <InputText id="codigoSms"
+                                   class="form-control-custom"
+                                   @bind-Value="loginModel.CodigoSms"
+                                   placeholder="Ingrese el código recibido" />
+
+                        <div class="alert alert-warning p-2 mt-2 text-center small" role="alert">
+                            El código expira en: <span class="fw-bold">@FormatTime(timeLeft)</span>
                         </div>
                     </div>
                 }
 
                 <div class="d-grid mt-4">
-                    <button type="submit" class="btn btn-link btn-submit text-decoration-none fw-bold text-secondary tracking-wide">
-                        @(isSmsStep ? "Verificar código SMS" : "Continuar")
+                    <button type="submit" class="btn btn-link btn-submit text-uppercase text-decoration-none fw-bold text-secondary tracking-wide">
+                        @(isSmsStep ? "VERIFICAR CODIGO SMS" : "INGRESAR")
                     </button>
                 </div>
             </EditForm>
         }
-   </div>   
-  
+<!--    </div>   -->
+<!-- </div>  -->
 
 <style>
-    :root {
-    --cn-primary: #0170a0;
-    }
-
     /* Línea superior naranja */
     .top-bar {
         position: absolute;
@@ -213,7 +212,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
     .form-control-custom {
         width: 100%;
         padding: 10px 12px;
-        border: 1px solid #e06d11; /* Borde naranja grueso */
+        border: 8px solid #e06d11; /* Borde naranja grueso */
         font-size: 14px;
         color: #333333;
         outline: none;
@@ -324,21 +323,10 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
     .cn-login-card__head {
         padding: 28px 24px 22px;
         text-align: center;
-        /* Se alimenta de #0a4180, var(--cn-primary)[#0170a0] y #1a9a9e */
         background: linear-gradient(125deg, #0a4180 0%, var(--cn-primary) 48%, #1a9a9e 100%);
         color: #fff;
         position: relative;
         overflow: hidden;
-        border-radius: 8px 8px 0 0; /* Opcional: Da una ligera curvatura superior si usas esquinas redondeadas */
-    }
-
-    .cn-login-card__logo {
-        position: relative;
-        z-index: 1;
-        display: block;
-        max-height: 52px;
-        width: auto;
-        margin: 0 auto 14px;
     }
 
     .cn-login-card__badge {
@@ -354,6 +342,15 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         letter-spacing: 0.06em;
         text-transform: uppercase;
     }
+
+        .cn-login-card__logo {
+            position: relative;
+            z-index: 1;
+            display: block;
+            max-height: 52px;
+            width: auto;
+            margin: 0 auto 14px;
+        }
 
 </style>
 
@@ -392,7 +389,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         if (!isSmsStep)
         {
             // Paso 1: Enviar Cédula (Se mantiene igual)
-            if (!string.IsNullOrWhiteSpace(loginModel.Cedula.ToString()))
+            if (!string.IsNullOrWhiteSpace(loginModel.Cedula))
             {
                 isSmsStep = true;
                 StartCountdown();
@@ -401,7 +398,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         else
         {
             // Paso 2: Verificar SMS
-            if (!string.IsNullOrWhiteSpace(loginModel.CodigoSms.ToString()))
+            if (!string.IsNullOrWhiteSpace(loginModel.CodigoSms))
             {
                 bool isSmsValid = true; // Reemplazar con tu validación real de API
 
@@ -413,7 +410,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
                     // AGREGAR 'await' AQUÍ: Ahora guarda de forma persistente en LocalStorage
                     /*await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
-                     * 
+
                     Navigation.NavigateTo("Home");*/
                     isSmsOk = true;
                 }
@@ -444,8 +441,8 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
     {
         StopTimer();
         isSmsStep = false;
-        loginModel.CodigoSms = 0;
-        loginModel.Cedula = 0; // Vuelve a solicitar la cédula vacía
+        loginModel.CodigoSms = string.Empty;
+        loginModel.Cedula = string.Empty; // Vuelve a solicitar la cédula vacía
 
         await InvokeAsync(StateHasChanged);
     }
@@ -472,14 +469,14 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
     public class LoginViewModel
     {
-        public long? Cedula { get; set; } 
-        public long? CodigoSms { get; set; }
+        public string Cedula { get; set; } = string.Empty;
+        public string CodigoSms { get; set; } = string.Empty;
     }
 
     private async void NavigateTo(string page)
     {
         var customAuth = (CustomAuthStateProvider)AuthStateProvider;
-        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula.ToString());
+        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
 
         // Reemplaza con tus rutas reales cuando implementes cada vista.
         Navigation.NavigateTo($"{page}");
