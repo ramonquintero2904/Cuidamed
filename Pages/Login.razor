@@ -1,11 +1,13 @@
-﻿@page "/login"
-
+﻿@page "/"
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Authorization
+@using Cuidamed.Services // El namespace donde guardaste el CuidanetApiClient
+@using Cuidamed.Models
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@inject CuidanetApiClient CuidanetService // <--- Inyectamos el servicio de la API -->
 @implements IDisposable
-<PageTitle>Cuidanet</PageTitle>
+<PageTitle>Cuidanetetetet</PageTitle>
 
 
  <div class="text-center"> 
@@ -31,12 +33,14 @@
             <div class="text-start w-100 px-3">
 
                 
-                <select id="afiliadoSelect" class="form-select afiliado-box mb-2" @bind="AfiliadoSeleccionado">
-                    <option value="" disabled selected hidden>Selecciona al afiliado...</option>
-                    <option value="1">Juan Perez (Titular)</option>
-                    <option value="2">Luis Luna</option>
-                    <option value="3">Ana Gonzalez</option>
-                </select>
+            <select id="afiliadoSelect" class="form-select afiliado-box mb-2" @bind="AfiliadoSeleccionado">
+                <option value="" disabled selected hidden>Selecciona al afiliado...</option>
+                @foreach (var afiliado in listaAfiliados)
+                {
+                    // Se mapea dinámicamente usando las propiedades del DTO de la API
+                    <option value="@afiliado.BeneficiarioId">ID: @afiliado.BeneficiarioId - Cédula: @afiliado.Cedula</option>
+                }
+            </select>
 
                 <p class="text-muted small mb-4" style="line-height: 1.4;">
 
@@ -124,6 +128,12 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
                         @(isSmsStep ? "Verificar código SMS" : "Continuar")
                     </button>
                 </div>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger small w-100 text-center my-2" role="alert">
+                        @errorMessage
+                    </div>
+                }
             </EditForm>
         }
    </div>   
@@ -363,12 +373,15 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
     private bool isSmsOk = false;
     private string AfiliadoSeleccionado { get; set; } = string.Empty;
     private bool AceptoTerminos { get; set; } = false;
+    private string errorMessage = string.Empty; // Para renderizar errores en la UI
+
+    // Lista dinámica para rellenar el select de afiliados tras la validación exitosa
+    private List<BeneficiarioDto> listaAfiliados = new();
 
     // Variables para el temporizador
     private System.Threading.Timer? countdownTimer;
-    private int timeLeft = 120; // 120 segundos
+    private int timeLeft = 120;
 
-    // Inyecta el estado de autenticación para comprobarlo al cargar la página
     [CascadingParameter]
     private Task<AuthenticationState>? AuthState { get; set; }
 
@@ -379,7 +392,6 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
             var authState = await AuthState;
             var user = authState.User;
 
-            // Si el usuario ya está autenticado en el sistema, lo sacamos del Login de inmediato
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
                 Navigation.NavigateTo("Home");
@@ -389,33 +401,75 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
     private async Task HandleSubmit()
     {
+        errorMessage = string.Empty;
+
         if (!isSmsStep)
         {
-            // Paso 1: Enviar Cédula (Se mantiene igual)
-            if (!string.IsNullOrWhiteSpace(loginModel.Cedula.ToString()))
+            // --- PASO 1: VALIDAR CÉDULA VÍA API CUIDANET ---
+            if (loginModel.Cedula.HasValue && loginModel.Cedula > 0)
             {
-                isSmsStep = true;
-                StartCountdown();
+                try
+                {
+                    // Consumimos el Endpoint 3 filtrando por la cédula ingresada
+                    var resultado = await CuidanetService.GetBeneficiariosAsync(cedula: loginModel.Cedula.Value.ToString());
+
+                    if (resultado != null && resultado.Any())
+                    {
+                        // Guardamos temporalmente el primer registro para conocer los datos del grupo familiar
+                        var infoUsuario = resultado.First();
+
+                        // OPCIONAL: Aquí disparas el flujo de envío de SMS de tu propio Backend
+                        // pasándole los datos o el ID recuperado de CuidaNet.
+
+                        isSmsStep = true;
+                        StartCountdown();
+                    }
+                    else
+                    {
+                        errorMessage = "La cédula ingresada no se encuentra registrada en el sistema de CuidaNet.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = $"Error de comunicación con la API: {ex.Message}";
+                }
             }
         }
         else
         {
-            // Paso 2: Verificar SMS
-            if (!string.IsNullOrWhiteSpace(loginModel.CodigoSms.ToString()))
+            // --- PASO 2: VERIFICAR CÓDIGO SMS ---
+            if (loginModel.CodigoSms.HasValue && loginModel.CodigoSms > 0)
             {
-                bool isSmsValid = true; // Reemplazar con tu validación real de API
+                bool isSmsValid = true; // TODO: Cambiar por tu validación real de SMS de Backend
 
                 if (isSmsValid)
                 {
                     StopTimer();
 
-                    var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+                    try
+                    {
+                        // --- PASO 3: CARGAR GRUPO FAMILIAR (AFILIADOS) ---
+                        // Volvemos a consultar la API pero esta vez para traer a TODOS los beneficiarios
+                        // vinculados a la cédula consultada inicialmente.
+                        var busquedaInicial = await CuidanetService.GetBeneficiariosAsync(cedula: loginModel.Cedula.ToString());
+                        if (busquedaInicial.Any())
+                        {
+                            int titularId = busquedaInicial.First().TitularId;
 
-                    // AGREGAR 'await' AQUÍ: Ahora guarda de forma persistente en LocalStorage
-                    /*await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);
-                     * 
-                    Navigation.NavigateTo("Home");*/
-                    isSmsOk = true;
+                            // Traemos todos los afiliados bajo ese titularId (Endpoint 3 - AND filter)
+                            listaAfiliados = await CuidanetService.GetBeneficiariosAsync(titularId: titularId);
+                        }
+
+                        isSmsOk = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        errorMessage = $"Error al recuperar el grupo familiar: {ex.Message}";
+                    }
+                }
+                else
+                {
+                    errorMessage = "El código SMS introducido es incorrecto o ha expirado.";
                 }
             }
         }
@@ -423,29 +477,29 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
     private void StartCountdown()
     {
-        timeLeft = 120; // Reiniciamos a 120 segundos
+        timeLeft = 120;
         countdownTimer = new System.Threading.Timer(async _ =>
         {
             if (timeLeft > 0)
             {
                 timeLeft--;
-                // Forzamos a Blazor a refrescar la UI desde el hilo del Timer
                 await InvokeAsync(StateHasChanged);
             }
             else
             {
-                // El tiempo terminó, reiniciamos el formulario
                 await ResetForm();
             }
-        }, null, 0, 1000); // Se ejecuta cada 1000ms (1 segundo)
+        }, null, 0, 1000);
     }
 
     private async Task ResetForm()
     {
         StopTimer();
         isSmsStep = false;
-        loginModel.CodigoSms = 0;
-        loginModel.Cedula = 0; // Vuelve a solicitar la cédula vacía
+        loginModel.CodigoSms = null;
+        loginModel.Cedula = null;
+        listaAfiliados.Clear();
+        errorMessage = string.Empty;
 
         await InvokeAsync(StateHasChanged);
     }
@@ -456,7 +510,6 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         countdownTimer = null;
     }
 
-    // Formatea los segundos restantes en formato MM:SS (Ej: 02:00)
     private string FormatTime(int seconds)
     {
         int minutes = seconds / 60;
@@ -464,7 +517,6 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         return $"{minutes:D2}:{remainingSeconds:D2}";
     }
 
-    // Buenas prácticas: Liberar el timer si el usuario navega fuera de la página
     public void Dispose()
     {
         StopTimer();
@@ -472,16 +524,20 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
     public class LoginViewModel
     {
-        public long? Cedula { get; set; } 
+        public long? Cedula { get; set; }
         public long? CodigoSms { get; set; }
     }
 
-    private async void NavigateTo(string page)
+    private async Task NavigateTo(string page)
     {
+        if (string.IsNullOrEmpty(AfiliadoSeleccionado))
+            return;
+
         var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+
+        // Marcamos la autenticación pasando el Id del afiliado seleccionado o la cédula
         await customAuth.MarkUserAsAuthenticated(loginModel.Cedula.ToString());
 
-        // Reemplaza con tus rutas reales cuando implementes cada vista.
         Navigation.NavigateTo($"{page}");
     }
 }

@@ -1,8 +1,11 @@
 using Cuidamed;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Cuidamed.Handlers;
+using Cuidamed.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -17,5 +20,18 @@ builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
 
 // 3. Habilitamos el núcleo de autorización de Blazor
 builder.Services.AddAuthorizationCore();
+
+// 4. Registrar el handler para un HttpClient específico
+builder.Services.AddTransient<CuidanetAuthHandler>(sp =>
+{
+    var user = builder.Configuration["CuidanetServices:user"] ?? string.Empty;
+    var pass = builder.Configuration["CuidanetServices:pass"] ?? string.Empty;
+
+    // Pasamos el usuario, la contraseña y builder.Configuration directamente
+    return new CuidanetAuthHandler(user, pass, builder.Configuration);
+});
+
+builder.Services.AddHttpClient<CuidanetApiClient>()
+    .AddHttpMessageHandler<CuidanetAuthHandler>();
 
 await builder.Build().RunAsync();
