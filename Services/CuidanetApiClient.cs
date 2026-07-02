@@ -17,6 +17,8 @@ namespace Cuidamed.Services
         private readonly string _validateUserUrl;
         private readonly string _beneficiarioUrl;
         private readonly string _movimientoConsultaUrl;
+        private readonly string _uploadImagenUrl;
+        private readonly string _ImagenesServicioUrl;
 
         // 3. Modificar el constructor para inyectar IConfiguration
         public CuidanetApiClient(HttpClient httpClient, IConfiguration configuration)
@@ -34,6 +36,9 @@ namespace Cuidamed.Services
             _validateUserUrl = configuration["CuidanetServices:Endpoints:ValidateUser"] ?? "Auth/validateuser";
             _beneficiarioUrl = configuration["CuidanetServices:Endpoints:Beneficiario"] ?? "Beneficiario";
             _movimientoConsultaUrl = configuration["CuidanetServices:Endpoints:MovimientoConsulta"] ?? "MovimientoServicio/consulta";
+            _uploadImagenUrl = configuration["CuidanetServices:Endpoints:UploadImagen"] ?? "Imagenes/upload";
+            _ImagenesServicioUrl = configuration["CuidanetServices:Endpoints:ImagenesServicio"] ?? "Imagenes/servicio";
+
         }
 
         /// <summary>
@@ -159,7 +164,7 @@ namespace Cuidamed.Services
             if (presupuestoCAId.HasValue)
                 content.Add(new StringContent(presupuestoCAId.Value.ToString()), "presupuestoCAId");
 
-            var response = await _httpClient.PostAsync("Imagenes/upload", content);
+            var response = await _httpClient.PostAsync($"{_uploadImagenUrl}", content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -176,7 +181,7 @@ namespace Cuidamed.Services
         /// </summary>
         public async Task<List<UploadImagenResponse>> GetImagenesServicioAsync(int movimientoServicioId, bool soloPendientes = false)
         {
-            string url = $"Imagenes/servicio/{movimientoServicioId}";
+            string url = $"{_ImagenesServicioUrl}/{movimientoServicioId}";
             if (soloPendientes)
             {
                 url += "?soloPendientes=true";

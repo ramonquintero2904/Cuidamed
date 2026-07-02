@@ -79,11 +79,11 @@
     {
         <div class="card text-start border-success mt-3">
             <div class="card-body">
-                <h6 class="card-title text-success">¡Subida Completada con Éxito! [cite: 29]</h6>
-                <p class="card-text small mb-1"><strong>ID Imagen:</strong> @ultimoRegistroUploaded.ImagenesId [cite: 31]</p>
-                <p class="card-text small mb-1"><strong>Ruta Asignada:</strong> <code>@ultimoRegistroUploaded.Url</code> [cite: 33]</p>
-                <p class="card-text small mb-1"><strong>Periodo:</strong> @ultimoRegistroUploaded.Periodo [cite: 38]</p>
-                <a href="@ultimoRegistroUploaded.UrlPublica" target="_blank" class="btn btn-link btn-sm p-0">Ver archivo en el servidor [cite: 34]</a>
+                <h6 class="card-title text-success">¡Subida Completada con Éxito! </h6>
+                <p class="card-text small mb-1"><strong>ID Imagen:</strong> @ultimoRegistroUploaded.ImagenesId </p>
+                <p class="card-text small mb-1"><strong>Ruta Asignada:</strong> <code>@ultimoRegistroUploaded.Url</code> </p>
+                <p class="card-text small mb-1"><strong>Periodo:</strong> @ultimoRegistroUploaded.Periodo </p>
+                <a href="@ultimoRegistroUploaded.UrlPublica" target="_blank" class="btn btn-link btn-sm p-0">Ver archivo en el servidor </a>
             </div>
         </div>
     }
@@ -157,11 +157,11 @@
             // Abrimos el flujo de lectura directo desde el archivo seleccionado del dispositivo
             using var stream = file.OpenReadStream(MaxFileSizeBytes);
 
-            // Subimos directamente pasando el Stream abierto a la API de CuidaNet [cite: 7]
+            // Subimos directamente pasando el Stream abierto a la API de CuidaNet 
             ultimoRegistroUploaded = await CuidanetService.UploadImagenAsync(
                 fileStream: stream,
                 fileName: file.Name, // Respeta el nombre original del dispositivo
-                carpeta: "Servicio", // Destino en el pool de carpetas de la API [cite: 28, 37]
+                carpeta: "Servicio", // Destino en el pool de carpetas de la API 
                 servicioId: servicioContextoId
             );
 
