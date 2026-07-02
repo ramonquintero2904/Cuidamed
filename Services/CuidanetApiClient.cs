@@ -1,4 +1,7 @@
-﻿using System.Net.Http.Json;
+﻿using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Web;
 using Cuidamed.Models;
 // 1. Agregar el namespace para IConfiguration
@@ -115,6 +118,86 @@ namespace Cuidamed.Services
 
             response.EnsureSuccessStatusCode();
             return response;
+        }
+
+        /// <summary>
+        /// POST /api/Imagenes/upload
+        /// Sube una imagen o documento al servidor de CuidaNet.
+        /// </summary>
+        public async Task<UploadImagenResponse?> UploadImagenAsync(
+            Stream fileStream,
+            string fileName,
+            string carpeta,
+            int? servicioId = null,
+            int? ordenIdOrMedicamentoId = null,
+            int? presupuestoCAId = null)
+        {
+            // El endpoint requiere multipart/form-data
+            using var content = new MultipartFormDataContent();
+
+            // 1. Agregar el archivo binario (Debe llamarse exactamente 'file')
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue(GetMimeType(fileName));
+            content.Add(streamContent, "file", fileName);
+
+            // 2. Agregar parámetros obligatorios del formulario
+            content.Add(new StringContent(carpeta), "carpeta");
+
+            // 3. Agregar parámetros condicionales según las reglas de la carpeta
+            if (servicioId.HasValue)
+                content.Add(new StringContent(servicioId.Value.ToString()), "servicioId");
+
+            if (ordenIdOrMedicamentoId.HasValue)
+            {
+                // Dependiendo del tipo de carpeta, se mapea al campo correspondiente
+                if (carpeta.Equals("Orden", StringComparison.OrdinalIgnoreCase))
+                    content.Add(new StringContent(ordenIdOrMedicamentoId.Value.ToString()), "ordenId");
+                else if (carpeta.Equals("Medicamento", StringComparison.OrdinalIgnoreCase))
+                    content.Add(new StringContent(ordenIdOrMedicamentoId.Value.ToString()), "medicamentoId");
+            }
+
+            if (presupuestoCAId.HasValue)
+                content.Add(new StringContent(presupuestoCAId.Value.ToString()), "presupuestoCAId");
+
+            var response = await _httpClient.PostAsync("Imagenes/upload", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"Error {response.StatusCode} en la subida: {errorMsg}");
+            }
+
+            return await response.Content.ReadFromJsonAsync<UploadImagenResponse>();
+        }
+
+        /// <summary>
+        /// GET /api/Imagenes/servicio/{movimientoServicioId}
+        /// Lista las imágenes indexadas a un servicio específico.
+        /// </summary>
+        public async Task<List<UploadImagenResponse>> GetImagenesServicioAsync(int movimientoServicioId, bool soloPendientes = false)
+        {
+            string url = $"Imagenes/servicio/{movimientoServicioId}";
+            if (soloPendientes)
+            {
+                url += "?soloPendientes=true";
+            }
+
+            var response = await _httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadFromJsonAsync<List<UploadImagenResponse>>() ?? new List<UploadImagenResponse>();
+        }
+
+        private string GetMimeType(string fileName)
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            return ext switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".pdf" => "application/pdf",
+                _ => "application/octet-stream"
+            };
         }
     }
 }

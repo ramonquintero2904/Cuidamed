@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cuidanet</title>
     <base href="/" />
-    <link rel="preload" id="webassembly" />
+
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
     <link href="manifest.webmanifest" rel="manifest" />
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
-    <script type="importmap"></script>
+
 </head>
 
 <body>
@@ -35,9 +35,55 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script>
+        Blazor.start({
+            loadBootResource: function (type, name, defaultUri, integrity) {
+                // Desactiva la búsqueda de archivos comprimidos .br si GitHub Pages no los sirve
+                if (type !== 'dotnetjs' && defaultUri.endsWith('.br')) {
+                    return defaultUri.replace('.br', '');
+                }
+            }
+        });
+    </script>
+
     <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+
+    <script>
+        window.BlazorCamera = {
+            start: async (videoId) => {
+                try {
+                    const video = document.getElementById(videoId);
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "environment" }, // Prioriza la cámara trasera en móviles
+                        audio: false
+                    });
+                    video.srcObject = stream;
+                    video.play();
+                    return true;
+                } catch (err) {
+                    console.error("Error accediendo a la cámara: ", err);
+                    return false;
+                }
+            },
+            capture: (videoId, canvasId) => {
+                const video = document.getElementById(videoId);
+                const canvas = document.getElementById(canvasId);
+                const context = canvas.getContext('2d');
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Retorna la imagen en formato Base64 comprimida como JPEG
+                return canvas.toDataURL('image/jpeg', 0.85);
+            }
+        };
+    </script>
+
 </body>
 
 </html>

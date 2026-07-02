@@ -1,0 +1,229 @@
+﻿@page "/Laboratorios"
+@using System.IO
+@using Cuidamed.Services
+@using Cuidamed.Models
+@inject IJSRuntime JS
+@inject CuidanetApiClient CuidanetService
+
+<h3 class="text-center my-3 text-secondary">Cargar Documentación</h3>
+
+<div class="container" style="max-width: 500px;">
+
+    <div class="d-flex justify-content-center gap-2 mb-3">
+        <button class="btn @(origenSeleccionado == OrigenMedia.Camara ? "btn-secondary" : "btn-outline-secondary") btn-sm"
+                @onclick="() => CambiarOrigen(OrigenMedia.Camara)">
+            <i class="bi bi-camera-fill"></i> Usar Cámara
+        </button>
+        <button class="btn @(origenSeleccionado == OrigenMedia.Archivo ? "btn-secondary" : "btn-outline-secondary") btn-sm"
+                @onclick="() => CambiarOrigen(OrigenMedia.Archivo)">
+            <i class="bi bi-folder-fill"></i> Subir Archivo Local
+        </button>
+    </div>
+
+    @if (origenSeleccionado == OrigenMedia.Camara)
+    {
+        <div class="video-container border rounded bg-dark mb-3 position-relative" style="height: 350px; overflow:hidden;">
+            <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+            <canvas id="captureCanvas" style="display: none;"></canvas>
+        </div>
+
+        <div class="d-grid gap-2 mb-4">
+            @if (!cameraInitialized)
+            {
+                <button class="btn btn-primary" @onclick="InicializarCamara">
+                    <i class="bi bi-camera"></i> Encender Cámara
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-success" @onclick="TomarYSubirFoto" disabled="@isUploading">
+                    @if (isUploading)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span> Subiendo a CuidaNet...</span>
+                    }
+                    else
+                    {
+                        <span><i class="bi bi-cloud-arrow-up"></i> Capturar y Enviar Documento</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card p-4 border-dashed text-center mb-4 bg-light">
+            <i class="bi bi-file-earmark-arrow-up text-muted mb-2" style="font-size: 48px;"></i>
+            <p class="text-muted small mb-3">Selecciona una imagen (.jpg, .png) o un documento (.pdf) guardado en tu dispositivo.</p>
+
+            <InputFile OnChange="HandleFileSelected" class="form-control" accept="image/png, image/jpeg, application/pdf" disabled="@isUploading" />
+
+            @if (isUploading && origenSeleccionado == OrigenMedia.Archivo)
+            {
+                <div class="mt-3">
+                    <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                    <span class="text-primary small ms-2"> Subiendo archivo local...</span>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert @statusClass small text-center" role="alert">
+            @statusMessage
+        </div>
+    }
+
+    @if (ultimoRegistroUploaded != null)
+    {
+        <div class="card text-start border-success mt-3">
+            <div class="card-body">
+                <h6 class="card-title text-success">¡Subida Completada con Éxito! [cite: 29]</h6>
+                <p class="card-text small mb-1"><strong>ID Imagen:</strong> @ultimoRegistroUploaded.ImagenesId [cite: 31]</p>
+                <p class="card-text small mb-1"><strong>Ruta Asignada:</strong> <code>@ultimoRegistroUploaded.Url</code> [cite: 33]</p>
+                <p class="card-text small mb-1"><strong>Periodo:</strong> @ultimoRegistroUploaded.Periodo [cite: 38]</p>
+                <a href="@ultimoRegistroUploaded.UrlPublica" target="_blank" class="btn btn-link btn-sm p-0">Ver archivo en el servidor [cite: 34]</a>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private enum OrigenMedia { Camara, Archivo }
+    private OrigenMedia origenSeleccionado = OrigenMedia.Camara;
+
+    private bool cameraInitialized = false;
+    private bool isUploading = false;
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+    private UploadImagenResponse? ultimoRegistroUploaded;
+
+    // ID de servicio contextual de tu negocio
+    private int servicioContextoId = 1024;
+
+    // Límite de 100 MB dictado por la especificación de la API de CuidaNet
+    private const long MaxFileSizeBytes = 100 * 1024 * 1024;
+
+    private void CambiarOrigen(OrigenMedia nuevoOrigen)
+    {
+        origenSeleccionado = nuevoOrigen;
+        statusMessage = string.Empty;
+        ultimoRegistroUploaded = null;
+    }
+
+    private async Task InicializarCamara()
+    {
+        statusMessage = "Solicitando permisos de cámara...";
+        statusClass = "alert-info";
+
+        bool resultado = await JS.InvokeAsync<bool>("BlazorCamera.start", "webcam");
+
+        if (resultado)
+        {
+            cameraInitialized = true;
+            statusMessage = "Cámara lista. Posiciona el documento frente al lente.";
+            statusClass = "alert-success";
+        }
+        else
+        {
+            statusMessage = "No se pudo acceder a la cámara. Revisa los permisos de tu navegador.";
+            statusClass = "alert-danger";
+        }
+    }
+
+    // --- MANEJO DE LA CARGA DEL ARCHIVO DISPOSITIVO ---
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+
+            // Validación previa de tamaño (Límite máximo: 100 MB)
+            if (file.Size > MaxFileSizeBytes)
+            {
+                statusMessage = "El archivo excede el límite permitido de 100 MB.";
+                statusClass = "alert-danger";
+                return;
+            }
+
+            isUploading = true;
+            statusMessage = "Leyendo archivo e iniciando transferencia...";
+            statusClass = "alert-info";
+            ultimoRegistroUploaded = null;
+            StateHasChanged();
+
+            // Abrimos el flujo de lectura directo desde el archivo seleccionado del dispositivo
+            using var stream = file.OpenReadStream(MaxFileSizeBytes);
+
+            // Subimos directamente pasando el Stream abierto a la API de CuidaNet [cite: 7]
+            ultimoRegistroUploaded = await CuidanetService.UploadImagenAsync(
+                fileStream: stream,
+                fileName: file.Name, // Respeta el nombre original del dispositivo
+                carpeta: "Servicio", // Destino en el pool de carpetas de la API [cite: 28, 37]
+                servicioId: servicioContextoId
+            );
+
+            statusMessage = "Archivo local subido e indexado correctamente en CuidaNet.";
+            statusClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error al cargar el archivo local: {ex.Message}";
+            statusClass = "alert-danger";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    // --- PROCESO ANTERIOR DE LA CÁMARA (Se mantiene idéntico) ---
+    private async Task TomarYSubirFoto()
+    {
+        try
+        {
+            isUploading = true;
+            statusMessage = "Procesando captura de imagen...";
+            statusClass = "alert-info";
+            ultimoRegistroUploaded = null;
+            StateHasChanged();
+
+            string base64DataUrl = await JS.InvokeAsync<string>("BlazorCamera.capture", "webcam", "captureCanvas");
+
+            if (string.IsNullOrEmpty(base64DataUrl) || !base64DataUrl.Contains(","))
+            {
+                throw new Exception("La captura falló o el stream de video está vacío.");
+            }
+
+            string base64Data = base64DataUrl.Split(',')[1];
+            byte[] imageBytes = Convert.FromBase64String(base64Data);
+
+            using var memoryStream = new MemoryStream(imageBytes);
+            string nombreArchivo = $"Captura_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+
+            statusMessage = "Transmitiendo captura de cámara a la API..."; 
+            StateHasChanged();
+
+            ultimoRegistroUploaded = await CuidanetService.UploadImagenAsync(
+                fileStream: memoryStream,
+                fileName: nombreArchivo,
+                carpeta: "Servicio", 
+                servicioId: servicioContextoId
+            );
+
+            statusMessage = "Captura de cámara guardada correctamente.";
+            statusClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error durante el proceso de cámara: {ex.Message}";
+            statusClass = "alert-danger";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+}
