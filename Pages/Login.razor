@@ -33,18 +33,26 @@
             <div class="text-start w-100 px-3">
 
                 
-            <select id="afiliadoSelect" class="form-select afiliado-box mb-2" @bind="AfiliadoSeleccionado">
+            <select id="afiliadoSelect" class="form-select afiliado-box mb-2"
+                    @bind="AfiliadoSeleccionadoValue" @bind:after="OnAfiliadoCambiado">
                 <option value="" disabled selected hidden>Selecciona al afiliado...</option>
                 @foreach (var afiliado in listaAfiliados)
                 {
-                    // Se mapea dinámicamente usando las propiedades del DTO de la API
                     <option value="@afiliado.BeneficiarioId">ID: @afiliado.BeneficiarioId - Cédula: @afiliado.Cedula</option>
                 }
             </select>
 
-                <p class="text-muted small mb-4" style="line-height: 1.4;">
+            @if (afiliadoDetalle != null && !string.IsNullOrEmpty(afiliadoDetalle.FotoBase64))
+            {
+                <div class="text-center my-3">
+                    <img src="data:image/jpeg;base64,@afiliadoDetalle.FotoBase64"
+                         alt="Foto Afiliado"
+                         class="rounded-circle border border-info"
+                         style="width: 90px; height: 90px; object-fit: cover;" />
+                    <p class="small text-muted mt-1"></p><!--Nombre completo   afiliadoDetalle.NombreCompleto -->
+                </div>
+            }
 
-                </p>
                
 
                 <div class="w-100 mb-4">
@@ -382,6 +390,16 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
     private System.Threading.Timer? countdownTimer;
     private int timeLeft = 120;
 
+    private BeneficiarioDto? afiliadoDetalle;
+
+    // Propiedad intermedia para capturar el cambio del select
+    private string _afiliadoSeleccionado = string.Empty;
+    private string AfiliadoSeleccionadoValue
+    {
+        get => _afiliadoSeleccionado;
+        set => _afiliadoSeleccionado = value;
+    }
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthState { get; set; }
 
@@ -411,7 +429,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
                 try
                 {
                     // Consumimos el Endpoint 3 filtrando por la cédula ingresada
-                    var resultado = await CuidanetService.GetBeneficiariosAsync(cedula: loginModel.Cedula.Value.ToString());
+                    var resultado = await CuidanetService.GetBeneficiariosAsync(cedula: loginModel.Cedula.ToString());
 
                     if (resultado != null && resultado.Any())
                     {
@@ -438,7 +456,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         else
         {
             // --- PASO 2: VERIFICAR CÓDIGO SMS ---
-            if (loginModel.CodigoSms.HasValue && loginModel.CodigoSms > 0)
+            if (loginModel.CodigoSms.HasValue && loginModel.CodigoSms > 0) 
             {
                 bool isSmsValid = true; // TODO: Cambiar por tu validación real de SMS de Backend
 
@@ -522,6 +540,22 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
         StopTimer();
     }
 
+    private async Task OnAfiliadoCambiado()
+    {
+        if (int.TryParse(_afiliadoSeleccionado, out int beneficiarioId))
+        {
+            try
+            {
+                // Consumimos el Endpoint 4 que ya tienes preparado con la foto en Base64
+                afiliadoDetalle = await CuidanetService.GetBeneficiarioDetalleAsync(beneficiarioId);
+            }
+            catch (Exception)
+            {
+                afiliadoDetalle = null; // Control de fallos silencioso para la UI
+            }
+        }
+    }
+
     public class LoginViewModel
     {
         public long? Cedula { get; set; }
@@ -530,13 +564,14 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
     private async Task NavigateTo(string page)
     {
-        if (string.IsNullOrEmpty(AfiliadoSeleccionado))
+        if (string.IsNullOrEmpty(AfiliadoSeleccionadoValue))
             return;
 
         var customAuth = (CustomAuthStateProvider)AuthStateProvider;
 
         // Marcamos la autenticación pasando el Id del afiliado seleccionado o la cédula
-        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula.ToString());
+        long temp = loginModel.Cedula is null ? 0 : Convert.ToInt64(loginModel.Cedula);
+        await customAuth.MarkUserAsAuthenticated(temp);
 
         Navigation.NavigateTo($"{page}");
     }

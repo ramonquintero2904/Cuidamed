@@ -1,19 +1,40 @@
 ﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <AuthorizeView>
     <Authorized>
         Hola, @context.User.Identity?.Name!
-        <!-- <button class="nav-link btn btn-link" @onclick="BeginLogOut">Salir</button> -->
+        <button class="nav-link btn btn-link" @onclick="BeginLogOut">Salir</button> 
+
+        <div class="page">
+            <main>
+                <article class="content px-4">
+                    @Body
+                </article>
+            </main>
+        </div>
+
     </Authorized>
     <NotAuthorized>
+        <div class="page">
+            <main>
+                <article class="content px-4">
+                    @Body
+                </article>
+            </main>
+        </div>
     </NotAuthorized>
 </AuthorizeView>
 
 @code{
-    public void BeginLogOut()
+    private const string StorageKey = "user_session";
+    private readonly IJSRuntime _jsRuntime;
+    public async void BeginLogOut()
     {
         //Navigation.NavigateToLogout("/");
-        Navigation.NavigateTo("", forceLoad: true);
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", StorageKey);
+        //Navigation.NavigateTo("/", forceLoad: true);
     }
 }

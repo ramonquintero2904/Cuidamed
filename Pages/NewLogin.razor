@@ -434,8 +434,8 @@
 
     private async void NavigateTo(string page)
     {
-        var customAuth = (CustomAuthStateProvider)AuthStateProvider;
-        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula.ToString());
+        /*var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+        await customAuth.MarkUserAsAuthenticated(loginModel.Cedula);*/
 
         // Reemplaza con tus rutas reales cuando implementes cada vista.
         Navigation.NavigateTo($"{page}");

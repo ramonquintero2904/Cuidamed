@@ -132,6 +132,15 @@
         }
     }
 
+
+    // Clase auxiliar para mapear el resultado del JS Interop
+    public class OcrResult
+    {
+        public bool Exito { get; set; }
+        public string TextoExtraido { get; set; } = string.Empty;
+        public bool EsDocumentoValido { get; set; }
+    }
+
     // --- MANEJO DE LA CARGA DEL ARCHIVO DISPOSITIVO ---
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -140,7 +149,6 @@
             var file = e.File;
             if (file == null) return;
 
-            // Validación previa de tamaño (Límite máximo: 100 MB)
             if (file.Size > MaxFileSizeBytes)
             {
                 statusMessage = "El archivo excede el límite permitido de 100 MB.";
@@ -149,23 +157,43 @@
             }
 
             isUploading = true;
-            statusMessage = "Leyendo archivo e iniciando transferencia...";
+            statusMessage = "Analizando contenido del documento (OCR)...";
             statusClass = "alert-info";
             ultimoRegistroUploaded = null;
             StateHasChanged();
 
-            // Abrimos el flujo de lectura directo desde el archivo seleccionado del dispositivo
-            using var stream = file.OpenReadStream(MaxFileSizeBytes);
+            // 1. VALIDACIÓN OCR SÓLO PARA IMÁGENES
+            if (file.ContentType.StartsWith("image/"))
+            {
+                // Convertimos el stream del archivo local a un Data URL Base64 para que Tesseract lo procese
+                using var memoryStream = new MemoryStream();
+                await file.OpenReadStream(MaxFileSizeBytes).CopyToAsync(memoryStream);
+                var buffer = memoryStream.ToArray();
+                string base64Image = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
 
-            // Subimos directamente pasando el Stream abierto a la API de CuidaNet 
+                var resultadoOcr = await JS.InvokeAsync<OcrResult>("BlazorOcr.analizarDocumento", base64Image);
+
+                if (!resultadoOcr.Exito || !resultadoOcr.EsDocumentoValido)
+                {
+                    statusMessage = "Validación rechazada: El documento no parece ser un récipe o diagnóstico válido.";
+                    statusClass = "alert-warning";
+                    return; // Detiene la subida si no cumple el criterio
+                }
+            }
+
+            // 2. PROCESO DE SUBIDA (Si es PDF o si pasó el OCR con éxito)
+            statusMessage = "Leyendo archivo e iniciando transferencia...";
+            StateHasChanged();
+
+            using var stream = file.OpenReadStream(MaxFileSizeBytes);
             ultimoRegistroUploaded = await CuidanetService.UploadImagenAsync(
                 fileStream: stream,
-                fileName: file.Name, // Respeta el nombre original del dispositivo
-                carpeta: "Servicio", // Destino en el pool de carpetas de la API 
+                fileName: file.Name,
+                carpeta: "Servicio",
                 servicioId: servicioContextoId
             );
 
-            statusMessage = "Archivo local subido e indexado correctamente en CuidaNet.";
+            statusMessage = "Archivo local validado y subido correctamente a CuidaNet.";
             statusClass = "alert-success";
         }
         catch (Exception ex)
@@ -179,7 +207,7 @@
         }
     }
 
-    // --- PROCESO ANTERIOR DE LA CÁMARA (Se mantiene idéntico) ---
+    // --- PROCESO DE LA CÁMARA CON VALIDACIÓN ---
     private async Task TomarYSubirFoto()
     {
         try
@@ -191,29 +219,41 @@
             StateHasChanged();
 
             string base64DataUrl = await JS.InvokeAsync<string>("BlazorCamera.capture", "webcam", "captureCanvas");
-
             if (string.IsNullOrEmpty(base64DataUrl) || !base64DataUrl.Contains(","))
             {
                 throw new Exception("La captura falló o el stream de video está vacío.");
             }
 
+            // 1. VALIDACIÓN OCR DE LA CAPTURA EN VIVO
+            statusMessage = "Validando texto de la captura...";
+            StateHasChanged();
+
+            var resultadoOcr = await JS.InvokeAsync<OcrResult>("BlazorOcr.analizarDocumento", base64DataUrl);
+
+            if (!resultadoOcr.Exito || !resultadoOcr.EsDocumentoValido)
+            {
+                statusMessage = "Validación fallida: Asegúrate de enfocar bien el récipe o diagnóstico.";
+                statusClass = "alert-warning";
+                return; // Detiene la subida
+            }
+
+            // 2. CONVERSIÓN Y TRANSFERENCIA (Idéntico a tu flujo original)
             string base64Data = base64DataUrl.Split(',')[1];
             byte[] imageBytes = Convert.FromBase64String(base64Data);
-
             using var memoryStream = new MemoryStream(imageBytes);
             string nombreArchivo = $"Captura_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
 
-            statusMessage = "Transmitiendo captura de cámara a la API..."; 
+            statusMessage = "Transmitiendo captura validada a la API...";
             StateHasChanged();
 
             ultimoRegistroUploaded = await CuidanetService.UploadImagenAsync(
                 fileStream: memoryStream,
                 fileName: nombreArchivo,
-                carpeta: "Servicio", 
+                carpeta: "Servicio",
                 servicioId: servicioContextoId
             );
 
-            statusMessage = "Captura de cámara guardada correctamente.";
+            statusMessage = "Captura validada y guardada correctamente.";
             statusClass = "alert-success";
         }
         catch (Exception ex)
