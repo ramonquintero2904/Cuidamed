@@ -201,7 +201,7 @@
 
     private void NavigateTo(string page)
     {
-        Navigation.NavigateTo($"./{page}");
+        Navigation.NavigateTo($"./{page}", forceLoad: true);
     }
 
     public async Task BeginLogOut()
@@ -210,6 +210,6 @@
         // Limpiamos la sesión del LocalStorage usando tu método estructurado
         await customAuth.MarkUserAsLoggedOut();
         // Redireccionamos a la raíz (Login) forzando recarga para reiniciar los estados
-        Navigation.NavigateTo("/", forceLoad: true);
+        NavigateTo("");
     }
 }

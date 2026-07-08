@@ -377,8 +377,8 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
 @code {
     private LoginViewModel loginModel = new();
-    private bool isSmsStep = false;
-    private bool isSmsOk = false;
+    private bool isSmsStep = false; 
+    private bool isSmsOk = false; 
     private string AfiliadoSeleccionado { get; set; } = string.Empty;
     private bool AceptoTerminos { get; set; } = false;
     private string errorMessage = string.Empty; // Para renderizar errores en la UI
@@ -439,8 +439,33 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
                         // OPCIONAL: Aquí disparas el flujo de envío de SMS de tu propio Backend
                         // pasándole los datos o el ID recuperado de CuidaNet.
 
-                        isSmsStep = true;
-                        StartCountdown();
+                        isSmsStep = false;  /* cambiarlo a true*/
+
+                        isSmsOk = true;     /* borrar ---INICIO */
+                        try
+                        {
+                            // --- PASO 3: CARGAR GRUPO FAMILIAR (AFILIADOS) ---
+                            // Volvemos a consultar la API pero esta vez para traer a TODOS los beneficiarios
+                            // vinculados a la cédula consultada inicialmente.
+                            var busquedaInicial = await CuidanetService.GetBeneficiariosAsync(cedula: loginModel.Cedula.ToString());
+                            if (busquedaInicial.Any())
+                            {
+                                int titularId = busquedaInicial.First().TitularId;
+
+                                // Traemos todos los afiliados bajo ese titularId (Endpoint 3 - AND filter)
+                                listaAfiliados = await CuidanetService.GetBeneficiariosAsync(titularId: titularId);
+                            }
+
+                            isSmsOk = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            errorMessage = $"Error al recuperar el grupo familiar: {ex.Message}";
+                        }
+                        /* borrar ---FIN*/
+
+
+                        //StartCountdown();
                     }
                     else
                     {
@@ -462,7 +487,7 @@ La entidad no se hace responsable por interrupciones temporales del servicio deb
 
                 if (isSmsValid)
                 {
-                    StopTimer();
+                    //StopTimer();
 
                     try
                     {
