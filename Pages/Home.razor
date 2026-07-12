@@ -1,215 +1,116 @@
 ﻿@page "/Home"
-@using Microsoft.AspNetCore.Components.Authorization
-@using Cuidamed.Services
-@using Cuidamed.Models
+@layout FrameWork
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
-@inject CuidanetApiClient CuidanetService
 
 <PageTitle>Cuidanet</PageTitle>
 
-<AuthorizeView>
-    <Authorized>
-        <div class="p-3">
-            <button class="btn btn-outline-info" @onclick="ToggleSidebar">
-                <span class="navbar-toggler-icon">☰</span> Menú
-            </button>
-        </div>
-
-        <div class="sidebar-overlay @(isSidebarOpen ? "show" : "")" @onclick="ToggleSidebar"></div>
-        <div class="custom-sidebar @(isSidebarOpen ? "show" : "")">
-            <div class="sidebar-header d-flex justify-content-between align-items-center p-3 border-bottom">
-                <h5 class="mb-0 text-info-custom fw-bold">Mi Perfil</h5>
-                <button type="button" class="btn-close" @onclick="ToggleSidebar"></button>
-            </div>
-            <div class="sidebar-body p-3 text-center">
-                @if (afiliadoDetalle != null)
-                {
-                    @if (!string.IsNullOrEmpty(afiliadoDetalle.FotoBase64))
-                    {
-                        <img src="data:image/jpeg;base64,@afiliadoDetalle.FotoBase64"
-                             alt="Foto Afiliado"
-                             class="rounded-circle border border-info mb-3"
-                             style="width: 100px; height: 100px; object-fit: cover;" />
-                    }
-                    else
-                    {
-                        <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px; color: white; font-size: 2rem;">
-                            👤
-                        </div>
-                    }
-                    <h6 class="fw-bold mb-1"></h6> <!-- @afiliadoDetalle.NombreCompleto -->
-                    <p class="text-muted small mb-3">Cédula: @cedulaUsuario</p>
-                }
-                else if (isLoading)
-                {
-                    <div class="spinner-border spinner-border-sm text-info" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="text-muted small mt-2">Cargando datos del afiliado...</p>
-                }
-                else
-                {
-                    <p class="text-muted small">Cédula: @cedulaUsuario</p>
-                }
-
-                <hr />
-
-                <button class="btn btn-danger w-100 mt-4" @onclick="BeginLogOut">
-                    🚪 Salir
-                </button>
-            </div>
-        </div>
-
-        <div class="container d-flex flex-column align-items-center justify-content-center">
-            <div class="text-center" style="max-width: 450px; width: 100%;">
-                <img class="logohome" src="logo.png" style="max-width: 200px;" />
-            </div>
-        </div>
-
-        <br />
-        <div align="center">
-            <p class="slogan fst-italic mb-4">"Cuidamos tu bienestar"</p>
-        </div>
-
-        <div class="dashboard-container">
-            <div class="dashboard-grid">
-                <div class="dashboard-card" @onclick='() => NavigateTo("beneficios")'>
-                    <div class="card-content">
-                        <img class="logodashboard" src="coberturas.png" />
-                        <div align="center">
-                            <p class="text-muted mb-3" style="font-size: 15px;">Coberturas y consumos</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-card" @onclick='() => NavigateTo("proveedores")'>
-                    <div class="card-content">
-                        <img class="logodashboard" src="proveedores.png" />
-                        <div align="center">
-                            <p class="text-muted mb-3" style="font-size: 15px;">Red de Proveedores</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-card" @onclick='() => NavigateTo("citas-aps")'>
-                    <div class="card-content">
-                        <img class="logodashboard" src="proveedores.png" />
-                        <div align="center">
-                            <p class="text-muted mb-3" style="font-size: 15px;">Agendar cita APS</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-card" @onclick='() => NavigateTo("Laboratorios")'>
-                    <div class="card-content">
-                        <img class="logodashboard" src="sintomas.png" />
-                        <div align="center">
-                            <p class="text-muted mb-3" style="font-size: 15px;">Consultas y Laboratorios</p>
-                        </div>
-                    </div>
+<div class="dashboard-container pt-1">
+    <div class="dashboard-grid">
+        <div class="dashboard-card" @onclick='() => NavigateTo("beneficios")'>
+            <div class="card-content">
+                <img class="logodashboard" src="coberturas.png" />
+                <div align="center">
+                    <p class="fuente-gris mt-2 mb-1">Coberturas y consumos</p>
                 </div>
             </div>
         </div>
-    </Authorized>
 
-    <NotAuthorized>
-        <RedirectToLogin />
-    </NotAuthorized>
-</AuthorizeView>
+        <div class="dashboard-card" @onclick='() => NavigateTo("proveedores")'>
+            <div class="card-content">
+                <img class="logodashboard" src="proveedores.png" />
+                <div align="center">
+                    <p class="fuente-gris mt-2 mb-1">Red de Proveedores</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card" @onclick='() => NavigateTo("citas-aps")'>
+            <div class="card-content">
+                <img class="logodashboard" src="proveedores.png" />
+                <div align="center">
+                    <p class="fuente-gris mt-2 mb-1">Agendar cita APS</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card" @onclick='() => NavigateTo("Laboratorios")'>
+            <div class="card-content">
+                <img class="logodashboard" src="sintomas.png" />
+                <div align="center">
+                    <p class="fuente-gris mt-2 mb-1">Consultas y Laboratorios</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
-    /* Estilos para el Sidebar desde la izquierda */
-    .custom-sidebar {
-        position: fixed;
-        top: 0;
-        left: -300px; /* Escondido por defecto */
-        width: 300px;
-        height: 100%;
+    /* Forzar el contenedor a tener un padding más pequeño en móviles */
+    .dashboard-container {
+        padding: 0.75rem !important;
         background-color: #ffffff;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-        z-index: 1050;
-        transition: left 0.3s ease-in-out;
     }
 
-        .custom-sidebar.show {
-            left: 0; /* Desplegado */
-        }
-
-    /* Fondo oscuro traslúcido al abrir el menú */
-    .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1040;
-        display: none;
+    /* Grilla estricta de 2 columnas en cualquier tamaño de pantalla */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important; /* Separación compacta entre tarjetas */
     }
 
-        .sidebar-overlay.show {
-            display: block;
+    /* Ajuste de tarjetas para que quepan bien de dos en dos */
+    .dashboard-card {
+        border-radius: 12px !important;
+        padding: 0.75rem !important; /* Reducción del espacio interno */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        cursor: pointer;
+        background-color: #ffffff;
+        border: 1px solid #f0f0f0; /* Borde muy sutil opcional para delimitar el toque */
+    }
+
+    /* Tamaño de los iconos optimizado para el espacio de media pantalla */
+    .logodashboard {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 35px; /* Tamaño fijo controlado */
+        height: auto;
+    }
+
+    /* Estilo heredado del Login con tamaño reducido para celulares (13px) */
+    .fuente-gris {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 300;
+        color: #808080;
+        font-size: 13px; /* Reducido de 15px para evitar saltos de línea toscos */
+        line-height: 1.2;
+    }
+
+    /* En pantallas un poco más grandes (tablets/PC) se puede relajar el tamaño */
+    @@media (min-width: 576px) {
+        .dashboard-grid {
+            gap: 1.25rem !important;
         }
 
-    .text-info-custom {
-        color: #00a4ba !important;
+        .dashboard-card {
+            padding: 1.25rem !important;
+        }
+
+        .fuente-gris {
+            font-size: 15px;
+        }
+
+        .logodashboard {
+            width: 45px;
+        }
     }
 </style>
 
 @code {
-    private bool isSidebarOpen = false;
-    private bool isLoading = true;
-    private string cedulaUsuario = string.Empty;
-    private BeneficiarioDto? afiliadoDetalle;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        if (user.Identity != null && user.Identity.IsAuthenticated)
-        {
-            cedulaUsuario = user.Identity.Name ?? string.Empty;
-
-            try
-            {
-                // Buscamos al beneficiario usando la cédula guardada en la sesión
-                var resultados = await CuidanetService.GetBeneficiariosAsync(cedula: cedulaUsuario);
-                if (resultados != null && resultados.Any())
-                {
-                    var primerAfiliado = resultados.First();
-                    // Obtenemos los detalles extendidos (incluyendo la foto)
-                    afiliadoDetalle = await CuidanetService.GetBeneficiarioDetalleAsync(primerAfiliado.BeneficiarioId);
-                }
-            }
-            catch (Exception)
-            {
-                // Manejo de error silencioso
-            }
-            finally
-            {
-                isLoading = false;
-            }
-        }
-    }
-
-    private void ToggleSidebar()
-    {
-        isSidebarOpen = !isSidebarOpen;
-    }
-
     private void NavigateTo(string page)
     {
         Navigation.NavigateTo($"./{page}", forceLoad: true);
-    }
-
-    public async Task BeginLogOut()
-    {
-        var customAuth = (CustomAuthStateProvider)AuthStateProvider;
-        // Limpiamos la sesión del LocalStorage usando tu método estructurado
-        await customAuth.MarkUserAsLoggedOut();
-        // Redireccionamos a la raíz (Login) forzando recarga para reiniciar los estados
-        NavigateTo("");
     }
 }

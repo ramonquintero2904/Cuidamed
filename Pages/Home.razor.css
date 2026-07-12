@@ -106,11 +106,13 @@
     height: auto;
 }
 
+/* Reducción de las imágenes del Dashboard al 50% de su tamaño */
 .logodashboard {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    width: 20%; /* Tamaño relativo */
+    width: 10%; /* Reducido del 20% original */
+    max-width: 50px; /* Evita que crezca demasiado en pantallas grandes */
     height: auto;
 }
 

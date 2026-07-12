@@ -1,0 +1,177 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using Cuidamed.Services
+@using Cuidamed.Models
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject CuidanetApiClient CuidanetService
+
+<AuthorizeView>
+    <Authorized>
+        <!-- Barra superior compacta y responsive -->
+        <div class="p-2 d-flex justify-content-between align-items-center border-bottom" style="min-height: 55px;">
+            <!-- Botón de menú compacto (sin texto, optimizado para celulares) -->
+            <div>
+                <button class="btn btn-sm btn-outline-info px-2 py-1" @onclick="ToggleSidebar" aria-label="Menú">
+                    <span class="navbar-toggler-icon" style="font-size: 1.1rem; line-height: 1;">☰</span>
+                </button>
+            </div>
+
+            <!-- Contenedor del Logo y Eslogan a la derecha (Mitad del tamaño) -->
+            <div class="text-end d-flex flex-column align-items-end justify-content-center">
+                <!-- Logo reducido a la mitad (max-width: 55px) -->
+                <img class="logohome" src="logo.png" style="max-width: 55px; height: auto;" alt="Logo" />
+                <!-- Eslogan en tamaño micro (9px) -->
+                <p class="slogan fst-italic mb-0" style="font-size: 9px; line-height: 1;">"Cuidamos tu bienestar"</p>
+            </div>
+        </div>
+
+        <!-- Fondo translúcido -->
+        <div class="sidebar-overlay @(isSidebarOpen ? "show" : "")" @onclick="ToggleSidebar"></div>
+
+        <!-- Sidebar Menú de Usuario -->
+        <div class="custom-sidebar @(isSidebarOpen ? "show" : "")">
+            <div class="sidebar-header d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h5 class="mb-0 text-info-custom fw-bold">Mi Perfil</h5>
+                <button type="button" class="btn-close" @onclick="ToggleSidebar"></button>
+            </div>
+            <div class="sidebar-body p-3 text-center">
+                @if (afiliadoDetalle != null)
+                {
+                    @if (!string.IsNullOrEmpty(afiliadoDetalle.FotoBase64))
+                    {
+                        <img src="data:image/jpeg;base64,@afiliadoDetalle.FotoBase64"
+                             alt="Foto Afiliado"
+                             class="rounded-circle border border-info mb-3"
+                             style="width: 100px; height: 100px; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px; color: white; font-size: 2rem;">
+                            👤
+                        </div>
+                    }
+                    <h6 class="fw-bold mb-1"></h6> <!-- @afiliadoDetalle.NombreCompleto -->
+                    <p class="text-muted small mb-3">Cédula: @cedulaUsuario</p>
+                }
+                else if (isLoading)
+                {
+                    <div class="spinner-border spinner-border-sm text-info" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-muted small mt-2">Cargando datos del afiliado...</p>
+                }
+                else
+                {
+                    <p class="text-muted small">Cédula: @cedulaUsuario</p>
+                }
+
+                <hr />
+
+                <button class="btn btn-danger w-100 mt-4" @onclick="BeginLogOut">
+                    🚪 Salir
+                </button>
+            </div>
+        </div>
+
+        <!-- Contenido dinámico de las páginas -->
+        <main class="px-3 mt-2">
+            @Body
+        </main>
+    </Authorized>
+
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+<style>
+    /* Estilos para el Sidebar desde la izquierda */
+    .custom-sidebar {
+        position: fixed;
+        top: 0;
+        left: -300px;
+        width: 300px;
+        height: 100%;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        z-index: 1050;
+        transition: left 0.3s ease-in-out;
+    }
+
+        .custom-sidebar.show {
+            left: 0;
+        }
+
+    /* Fondo oscuro traslúcido al abrir el menú */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+    }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+    .text-info-custom {
+        color: #00a4ba !important;
+    }
+
+    .slogan {
+        color: #00a4ba;
+    }
+</style>
+
+@code {
+    private bool isSidebarOpen = false;
+    private bool isLoading = true;
+    private string cedulaUsuario = string.Empty;
+    private BeneficiarioDto? afiliadoDetalle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            cedulaUsuario = user.Identity.Name ?? string.Empty;
+
+            try
+            {
+                var resultados = await CuidanetService.GetBeneficiariosAsync(cedula: cedulaUsuario);
+                if (resultados != null && resultados.Any())
+                {
+                    var primerAfiliado = resultados.First();
+                    afiliadoDetalle = await CuidanetService.GetBeneficiarioDetalleAsync(primerAfiliado.BeneficiarioId);
+                }
+            }
+            catch (Exception)
+            {
+                // Manejo de error silencioso
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private void ToggleSidebar()
+    {
+        isSidebarOpen = !isSidebarOpen;
+    }
+
+    public async Task BeginLogOut()
+    {
+        var customAuth = (CustomAuthStateProvider)AuthStateProvider;
+        await customAuth.MarkUserAsLoggedOut();
+        Navigation.NavigateTo("./", forceLoad: true);
+    }
+}
