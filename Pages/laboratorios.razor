@@ -191,7 +191,7 @@
                 await file.OpenReadStream(MaxFileSizeBytes).CopyToAsync(memoryStream);
                 var buffer = memoryStream.ToArray();
                 string base64Image = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
-
+/*
                 var resultadoOcr = await JS.InvokeAsync<OcrResult>("BlazorOcr.analizarDocumento", base64Image);
 
                 if (!resultadoOcr.Exito || !resultadoOcr.EsDocumentoValido)
@@ -199,7 +199,7 @@
                     statusMessage = "Validación rechazada: El documento no parece ser un récipe o diagnóstico válido.";
                     statusClass = "alert-warning";
                     return; // Detiene la subida si no cumple el criterio
-                }
+                }/**/
             }
 
             // 2. PROCESO DE SUBIDA (Si es PDF o si pasó el OCR con éxito)
@@ -246,7 +246,7 @@
             }
 
             // 1. VALIDACIÓN OCR DE LA CAPTURA EN VIVO
-            statusMessage = "Validando texto de la captura...";
+ /*           statusMessage = "Validando texto de la captura...";
             StateHasChanged();
 
             var resultadoOcr = await JS.InvokeAsync<OcrResult>("BlazorOcr.analizarDocumento", base64DataUrl);
@@ -256,7 +256,7 @@
                 statusMessage = "Validación fallida: Asegúrate de enfocar bien el récipe o diagnóstico.";
                 statusClass = "alert-warning";
                 return; // Detiene la subida
-            }
+            }*/
 
             // 2. CONVERSIÓN Y TRANSFERENCIA (Idéntico a tu flujo original)
             string base64Data = base64DataUrl.Split(',')[1];
